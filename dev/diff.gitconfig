@@ -1,0 +1,21 @@
+[diff]
+	# Use the OS X graphical three-way merge tool for graphical diffs.
+	tool = opendiff
+	# Use the slower but better patience diff algorithm
+	algorithm = patience
+	# Detect copies as well as renames
+	renames = copies
+[merge]
+	# Use the OS X graphical three-way merge tool for graphical merges.
+	tool = opendiff
+	log = true
+[mergetool]
+	# Don't prompt before opening the merge tool.
+	prompt = false
+	# Don't keep backups of the merge tool inputs.
+	keepBackup = false
+	# Don't keep the merge tool temporary input/output files.
+	keepTemporaries = false
+[mergetool "opendiff"]
+	# Use a script to setup opendiff correctly for Git merges.
+	path = git-mergetool-opendiff

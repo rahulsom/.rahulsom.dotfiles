@@ -1,0 +1,8 @@
+[instaweb]
+	# Use the Ruby WEBRick library when creating a `git instaweb`
+	# HTTP server.
+	httpd = webrick
+[filter "lfs"]
+	clean = git-lfs clean %f
+	smudge = git-lfs smudge %f
+	required = true
