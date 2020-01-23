@@ -1,0 +1,9 @@
+sdkman_auto_answer=false
+sdkman_auto_selfupdate=false
+sdkman_insecure_ssl=false
+sdkman_disable_gvm_alias=true
+sdkman_curl_connect_timeout=5
+sdkman_curl_max_time=4
+sdkman_beta_channel=true
+
+sdkman_debug_mode=false
