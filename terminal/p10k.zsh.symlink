@@ -19,6 +19,18 @@
 [[ ! -o 'no_brace_expand' ]] || p10k_config_opts+=('no_brace_expand')
 'builtin' 'setopt' 'no_aliases' 'no_sh_glob' 'brace_expand'
 
+prompt_sdk_java() {
+  if [[ "$JAVA_HOME" =~ "$HOME/.sdkman/.*" ]]; then
+    JDK_VER=""
+    if [[ "$JAVA_HOME" = "$HOME/.sdkman/candidates/java/current" ]]; then
+      JDK_VER=$(basename $(readlink /Users/rsomasunderam/.sdkman/candidates/java/current))
+    else
+      JDK_VER=$(basename $JAVA_HOME)
+    fi
+    _p9k_prompt_segment "$0" white red 'JAVA_ICON' 0 '' "${JDK_VER}"
+  fi
+}
+
 () {
   emulate -L zsh
   setopt no_unset extended_glob
@@ -71,6 +83,7 @@
     fvm                     # flutter version management (https://github.com/leoafarias/fvm)
     luaenv                  # lua version from luaenv (https://github.com/cehoffman/luaenv)
     jenv                    # java version from jenv (https://github.com/jenv/jenv)
+    sdk_java                # java version from sdkman (https://sdkman.io)
     plenv                   # perl version from plenv (https://github.com/tokuhirom/plenv)
     kubecontext             # current kubernetes context (https://kubernetes.io/)
     terraform               # terraform workspace (https://www.terraform.io)
