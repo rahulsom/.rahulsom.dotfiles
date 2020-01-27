@@ -23,7 +23,7 @@ prompt_sdk_java() {
   if [[ "$JAVA_HOME" =~ "$HOME/.sdkman/.*" ]]; then
     JDK_VER=""
     if [[ "$JAVA_HOME" = "$HOME/.sdkman/candidates/java/current" ]]; then
-      JDK_VER=$(basename $(readlink /Users/rsomasunderam/.sdkman/candidates/java/current))
+      JDK_VER=$(basename $(readlink $HOME/.sdkman/candidates/java/current))
     else
       JDK_VER=$(basename $JAVA_HOME)
     fi
