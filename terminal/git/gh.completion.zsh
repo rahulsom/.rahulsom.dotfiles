@@ -1,6 +1,6 @@
 _users() {
   queryString=$1
-  hub api --paginate graphql -f query="query FindUsersOrOrganizations {
+  hub api graphql -f query="query FindUsersOrOrganizations {
     users:search(type:USER, query: \"$queryString\", first:10) {
       userCount
       nodes {
@@ -18,7 +18,7 @@ _users() {
 }
 
 _currentUser() {
-  hub api --paginate graphql -f query="query WhoAmI {
+  hub api graphql -f query="query WhoAmI {
     viewer {
       login
       name
@@ -28,7 +28,7 @@ _currentUser() {
 
 _repos() {
   queryString="$1"
-  hub api --paginate graphql -f query="query repos {
+  hub api graphql -f query="query repos {
     repositories:search(type:REPOSITORY, query: \"$queryString\", first:10) {
       repositoryCount
       nodes {
