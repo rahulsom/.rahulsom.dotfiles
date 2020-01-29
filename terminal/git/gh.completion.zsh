@@ -1,4 +1,4 @@
-_users() {
+_gh_users() {
   queryString=$1
   hub api graphql -f query="query FindUsersOrOrganizations {
     users:search(type:USER, query: \"$queryString\", first:10) {
@@ -17,7 +17,7 @@ _users() {
   }" | jq -r  '.data.users.nodes[] | "\(.login):\(if .name == null then .login else .name end)"' | sed -e 's/:null"/:"/g'
 }
 
-_currentUser() {
+_gh_currentUser() {
   hub api graphql -f query="query WhoAmI {
     viewer {
       login
@@ -26,7 +26,7 @@ _currentUser() {
   }" | jq -r  '.data.viewer | "\(.login):\(if .name == null then .login else .name end)"' | sed -e 's/:null"/:"/g'
 }
 
-_repos() {
+_gh_repos() {
   queryString="$1"
   hub api graphql -f query="query repos {
     repositories:search(type:REPOSITORY, query: \"$queryString\", first:10) {
@@ -52,16 +52,16 @@ _gh() {
     cd)
       if [ "$(echo "${words[3]}" | wc -c)" -gt 1 ]; then
         if [ "$(echo "${words[3]}" | grep -c /)" -gt 0 ]; then
-          ORG=$(echo "${words[3]}" | cut -d / -f 1)
-          REPO=$(echo "${words[3]}" | cut -d / -f 2)
-          repos=("${(@f)$(_repos "user:$ORG $REPO")}")
+          local ORG=$(echo "${words[3]}" | cut -d / -f 1)
+          local REPO=$(echo "${words[3]}" | cut -d / -f 2)
+          local repos=("${(@f)$(_gh_repos "user:$ORG $REPO")}")
           _describe 'cd' repos
         else
-          users=("${(@f)$(_users ${words[3]})}")
+          local users=("${(@f)$(_gh_users ${words[3]})}")
           _describe 'cd' users
         fi
       else
-        currentUser=("${(@f)$(_currentUser)}")
+        local currentUser=("${(@f)$(_gh_currentUser)}")
         _describe 'cd' currentUser
       fi
       ;;
