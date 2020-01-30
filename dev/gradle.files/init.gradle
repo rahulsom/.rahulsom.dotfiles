@@ -1,0 +1,19 @@
+initscript {
+  repositories {
+    gradlePluginPortal()
+  }
+  dependencies {
+    classpath 'gradle.plugin.com.dorongold.plugins:task-tree:1.3.1'
+    classpath "com.adarshr:gradle-test-logger-plugin:1.6.0"
+  }
+}
+
+allprojects {
+  apply plugin: com.dorongold.gradle.tasktree.TaskTreePlugin
+  apply plugin: com.adarshr.gradle.testlogger.TestLoggerPlugin
+
+  testlogger {
+    theme 'mocha-parallel'
+    slowThreshold 5000
+  }
+}
