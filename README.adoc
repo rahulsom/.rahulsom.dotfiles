@@ -45,3 +45,9 @@ git clone https://github.com/my-oss-project/.project.dotfiles
 ----
 dotfiles_install
 ----
+
+== TL;DR Version
+[source,bash]
+----
+curl -L http://bit.ly/r4s11 | bash
+----
