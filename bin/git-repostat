@@ -1,0 +1,78 @@
+#!/bin/bash
+TEXT_RED=`tput setaf 1`
+TEXT_GREEN=`tput setaf 2`
+RESET_FORMATTING=`tput sgr0`
+if [ $(git remote | grep -c upstream) = 1 ]; then
+  UP_REMOTE=upstream
+else
+  UP_REMOTE=origin
+fi
+if [ $(git branch | grep -c develop) = 1 ]; then
+  UP_BRANCH=develop
+else
+  UP_BRANCH=master
+fi
+SYNC_BRANCH=${CENTRAL_BRANCH:-$UP_REMOTE/$UP_BRANCH}
+function localBranches() {
+  git branch | sed -e s/\*//g | tr -s " " | cut -d " " -f 2 | sort
+}
+function remoteBranches() {
+  git branch -r | grep origin | grep -v HEAD | sed -e s/origin\\///g | \
+      tr -s " " | cut -d " " -f 2 | sort
+}
+function localStatus() {
+  AGE=$(git show --pretty=format:"%cr" $1 | head -n 1 | cut -d "," -f 1)
+  BEHIND=$(git log --no-merges $1..${SYNC_BRANCH} --pretty=oneline | wc -l)
+  AHEAD=$(git log --no-merges ${SYNC_BRANCH}..$1 --pretty=oneline | wc -l)
+  printf "%-40s %15s ${TEXT_GREEN}%5d ${TEXT_RED}%5d${RESET_FORMATTING}\n" $1 "$AGE" $AHEAD $BEHIND
+}
+function remoteStatus() {
+  AGE=$(git show --pretty=format:"%cr" origin/$1 | head -n 1 | cut -d "," -f 1)
+  BEHIND=$(git log --no-merges origin/$1..${SYNC_BRANCH} --pretty=oneline | wc -l)
+  AHEAD=$(git log --no-merges ${SYNC_BRANCH}..origin/$1 --pretty=oneline | wc -l)
+  COMMENT=""
+  if [ $AHEAD = 0 ]; then
+    if [ $1 != master ] && [ $1 != develop ]; then
+      COMMENT="git push origin :$1"
+      echo $COMMENT >> /tmp/commands.txt
+    fi
+  fi
+  printf "%-40s %15s %-20s  ${TEXT_GREEN}%5d ${TEXT_RED}%5d${RESET_FORMATTING}      %s\n" $1 "$AGE" "" $AHEAD $BEHIND "$COMMENT"
+}
+function dualStatus() {
+  AGE=$(git show --pretty=format:"%cr" $1 -- | head -n 1 | cut -d "," -f 1)
+  BEHIND_SYNC=$(git log --no-merges $1..${SYNC_BRANCH} --pretty=oneline | wc -l)
+  AHEAD_SYNC=$(git log --no-merges ${SYNC_BRANCH}..$1 --pretty=oneline | wc -l)
+  BEHIND_ORIGIN=$(git log --no-merges $1..origin/$1 --pretty=oneline | wc -l)
+  AHEAD_ORIGIN=$(git log --no-merges origin/$1..$1 --pretty=oneline | wc -l)
+  COMMENT=""
+  if [ $AHEAD_SYNC = 0 ]; then
+    if [ $1 != master ] && [ $1 != develop ]; then
+      COMMENT="git branch -D $1; git push origin :$1"
+      echo $COMMENT >> /tmp/commands.txt
+    fi
+  fi
+  printf "%-40s %15s ${TEXT_GREEN}%5d ${TEXT_RED}%5d %10s${TEXT_GREEN}%5d ${TEXT_RED}%5d${RESET_FORMATTING}      %s\n" \
+      $1 "$AGE" $AHEAD_ORIGIN $BEHIND_ORIGIN "" $AHEAD_SYNC $BEHIND_SYNC "$COMMENT"
+}
+localBranches > /tmp/$$.local.tmp
+remoteBranches > /tmp/$$.remote.tmp
+comm -12 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.both.tmp
+comm -13 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.remoteonly.tmp
+comm -23 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.localonly.tmp
+if [ $(wc -l /tmp/$$.localonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
+  printf "${TEXT_RED}%-56s${RESET_FORMATTING} %s\n" "Local Only Branches" "vs ${SYNC_BRANCH}"
+  cat /tmp/$$.localonly.tmp | while read -r i; do localStatus "$i"; done | sort -k 1 -n
+  echo ""
+fi
+if [ $(wc -l /tmp/$$.remoteonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
+  printf "${TEXT_RED}%-56s${RESET_FORMATTING} %-20s  %s\n" "Remote Only Branches" "" "vs ${SYNC_BRANCH}"
+  cat /tmp/$$.remoteonly.tmp | while read -r i; do remoteStatus "$i"; done | sort -k 1 -n
+  echo ""
+fi
+if [ $(wc -l /tmp/$$.both.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
+  printf "${TEXT_GREEN}%-56s${RESET_FORMATTING} %-20s %s\n" "Synced Branches" "vs origin" "and ${SYNC_BRANCH}"
+  cat /tmp/$$.both.tmp | while read -r i; do dualStatus "$i"; done | sort -k 1 -n
+  echo ""
+fi
+rm /tmp/$$.*.tmp
