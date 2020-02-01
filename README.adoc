@@ -1,0 +1,47 @@
+= .rahulsom.dotfiles
+
+My Dotfiles based on https://github.com/DanielThomas/oh-your-dotfiles[oh-your-dotfiles].
+
+== My Setup
+
+1. Install my fork of oh-your-dotfiles. There are some customizations that are waiting to be merged.
++
+[source,bash]
+----
+cd $HOME
+git clone https://github.com/rahulsom/oh-your-dotfiles.git .oh-your-dotfiles
+cd .oh-your-dotfiles
+git checkout local
+cd ..
+----
+
+2. Link the zshrc file
++
+[source,bash]
+----
+ln -s ~/.oh-your-dotfiles/oh-your.zshrc ~/.zshrc
+----
+
+3. Change your default shell
++
+[source,bash]
+----
+chsh -s /bin/zsh
+----
+
+4. Clone this repo and other repos
++
+[source,bash]
+----
+git clone https://github.com/rahulsom/.rahulsom.dotfiles
+git clone https://git.mycompany.com/me/.company.dotfiles
+git clone https://git.mycompany.com/me/.myteam.dotfiles
+git clone https://github.com/my-oss-project/.project.dotfiles
+----
+
+5. Setup dotfiles
++
+[source,bash]
+----
+dotfiles_install
+----
