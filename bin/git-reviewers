@@ -1,0 +1,43 @@
+#!/usr/bin/bash -ue
+
+## Sourced from https://gist.github.com/alekstorm/4949628
+
+if [[ $# -lt 1 || $# -gt 2 ]]; then
+  echo "Usage: git $(basename "$0" | sed 's/^git-//') <end-commit> [<start-commit>]"
+  exit 1
+fi
+
+diff_range="$1^..$1"
+end_commit="$1^"
+if [[ $# -eq 2 ]]; then
+  diff_range="$2..$1"
+  end_commit="$2"
+fi
+
+function createBlameParts {
+  awk -v commit="$end_commit" '{
+    if ($1 == "@@") {
+      sub(",", ",+", $2)
+      print "git blame --line-porcelain -MCw -L " substr($2,2) " " commit
+    }
+    else
+      print "-- " substr($3,3)
+  }'
+}
+
+function concatBlameParts {
+  awk '{
+    if (match($0, /^--/) == 1)
+      file=$0
+    else
+      print $0 " " file
+  }'
+}
+
+function execBlame {
+  while read command; do
+    $command | egrep '^author |^author-mail ' | cut -d' ' -f2- | awk '{ if (NR % 2 == 1) o=$0; else print o " " $0 }'
+  done
+}
+
+git diff --diff-filter=DM "$diff_range" | egrep '^@|^diff' | createBlameParts | concatBlameParts | execBlame | sort | uniq -c | sort -nr
