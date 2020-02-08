@@ -6,6 +6,9 @@ function dotfiles() {
 }
 
 while read d; do
+  tput bold
+  echo "$d" | perl -pe "s:$HOME:~:g"
   cd "$d"
+  tput sgr0
   git pull
 done < <(dotfiles | xargs -n 1 echo)
