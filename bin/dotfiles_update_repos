@@ -6,8 +6,9 @@ function dotfiles() {
 }
 
 while read d; do
-  echo "$(tput bold)$(tput setaf $TPUT_Blue)$d" | perl -pe "s:$HOME:~:g"
+  tput bold
+  echo -e "$d" | perl -pe "s:$HOME:~:g"
   tput sgr0
   cd "$d" || return
-  test -d .git && git pull
+  test -d .git && git pull || echo "Not a git repo"
 done < <(dotfiles | xargs -n 1 echo)
