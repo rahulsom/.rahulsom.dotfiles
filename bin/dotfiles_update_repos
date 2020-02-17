@@ -1,14 +1,9 @@
 #!/bin/bash
 
-function dotfiles() {
-  files+=($(find "$HOME" -maxdepth 1 -type d -name '.*dotfiles*'))
-  echo "${files[@]}"
-}
-
 while read d; do
   tput bold
   echo -e "$d" | perl -pe "s:$HOME:~:g"
   tput sgr0
   cd "$d" || return
   test -d .git && git pull || echo "Not a git repo"
-done < <(dotfiles | xargs -n 1 echo)
+done < <(ls -1d "$HOME"/.*dotfiles)
