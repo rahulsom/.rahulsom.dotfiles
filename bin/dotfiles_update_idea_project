@@ -21,7 +21,7 @@ function dotfiles() {
 while read d; do
   b=$(basename $d)
   echo "      <module fileurl=\"file://${d}/${b}.iml\" filepath=\"${d}/${b}.iml\" />" >> $HOME/.oh-your-dotfiles/.idea/modules.xml
-  echo "    <mapping directory=\"${d}\" vcs=\"Git\" />" >> $HOME/.oh-your-dotfiles/.idea/vcs.xml
+  test -d "${d}/.git" && echo "    <mapping directory=\"${d}\" vcs=\"Git\" />" >> $HOME/.oh-your-dotfiles/.idea/vcs.xml
   cat > ${d}/${b}.iml << EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="WEB_MODULE" version="4">
