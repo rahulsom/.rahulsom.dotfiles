@@ -1,7 +1,19 @@
 #!/bin/bash
 
-pad() {
-  printf "%5s$(tput setaf "${TPUT_Blue}")|$(tput sgr0) %s\n" "" "$1"
+padOut() {
+  while read -r line; do
+    printf "%5s$(tput setaf "${TPUT_Blue}")|$(tput sgr0) %s\n" "" "$line"
+  done
+}
+
+padErr() {
+  while read -r line; do
+    printf "%5s$(tput setaf "${TPUT_Red}")|$(tput sgr0) %s\n" "" "$line"
+  done
+}
+
+testAndPull() {
+  test -d .git && git pull
 }
 
 while read d; do
@@ -10,8 +22,6 @@ while read d; do
   tput sgr0
   cd "$d" || return
   echo ""
-  while read -r line; do
-    pad "$line"
-  done < <(test -d .git && git pull 2>&1 || echo "Not a git repo")
+  { testAndPull 2>&1 1>&3 3>&- | padErr; } 3>&1 1>&2 | padOut
   echo ""
 done < <(ls -1d "$HOME"/.*dotfiles)
