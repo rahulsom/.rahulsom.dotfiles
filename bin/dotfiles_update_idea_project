@@ -1,28 +1,27 @@
 #!/bin/bash
 
-cat > $HOME/.oh-your-dotfiles/.idea/modules.xml << EOF
+cat >$HOME/.oh-your-dotfiles/.idea/modules.xml <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
 EOF
 
-cat > $HOME/.oh-your-dotfiles/.idea/vcs.xml << EOF
+cat >$HOME/.oh-your-dotfiles/.idea/vcs.xml <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
 EOF
 
 function dotfiles() {
-  files+=($(find "$HOME" -maxdepth 1 -type d -name '.*dotfiles*'))
-  echo "${files[@]}"
+  find "$HOME" -maxdepth 1 -type d -name '.*dotfiles*'
 }
 
 while read d; do
   b=$(basename $d)
-  echo "      <module fileurl=\"file://${d}/${b}.iml\" filepath=\"${d}/${b}.iml\" />" >> $HOME/.oh-your-dotfiles/.idea/modules.xml
-  test -d "${d}/.git" && echo "    <mapping directory=\"${d}\" vcs=\"Git\" />" >> $HOME/.oh-your-dotfiles/.idea/vcs.xml
-  cat > ${d}/${b}.iml << EOF
+  echo "      <module fileurl=\"file://${d}/${b}.iml\" filepath=\"${d}/${b}.iml\" />" >>$HOME/.oh-your-dotfiles/.idea/modules.xml
+  test -d "${d}/.git" && echo "    <mapping directory=\"${d}\" vcs=\"Git\" />" >>$HOME/.oh-your-dotfiles/.idea/vcs.xml
+  cat >${d}/${b}.iml <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="WEB_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
@@ -35,13 +34,13 @@ while read d; do
 EOF
 done < <(dotfiles | xargs -n 1 echo)
 
-cat >> $HOME/.oh-your-dotfiles/.idea/modules.xml << EOF
+cat >>$HOME/.oh-your-dotfiles/.idea/modules.xml <<EOF
     </modules>
   </component>
 </project>
 EOF
 
-cat >> $HOME/.oh-your-dotfiles/.idea/vcs.xml << EOF
+cat >>$HOME/.oh-your-dotfiles/.idea/vcs.xml <<EOF
   </component>
 </project>
 EOF
