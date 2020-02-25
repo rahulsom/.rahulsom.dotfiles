@@ -1,9 +1,17 @@
 #!/bin/bash
 
+pad() {
+  printf "%5s$(tput setaf "${TPUT_Blue}")|$(tput sgr0) %s\n" "" "$1"
+}
+
 while read d; do
   tput bold
   echo -e "$d" | perl -pe "s:$HOME:~:g"
   tput sgr0
   cd "$d" || return
-  test -d .git && git pull || echo "Not a git repo"
+  echo ""
+  while read -r line; do
+    pad "$line"
+  done < <(test -d .git && git pull 2>&1 || echo "Not a git repo")
+  echo ""
 done < <(ls -1d "$HOME"/.*dotfiles)
