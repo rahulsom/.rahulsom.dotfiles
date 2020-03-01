@@ -1,5 +1,9 @@
 #!/bin/bash
-git tag --format='%(creatordate:short)%09%(refname:strip=2)%09%(subject)' --sort=creatordate \
+git tag --format='%(creatordate:short)%09%(refname:strip=2)%09%(objectname)%09%(subject)' --sort=creatordate \
+      | awk '
+          BEGIN { FS = "\t" } ;
+          { print $1 "\t" $2 "\t" substr($3, 1, 7) "\t" $4 }
+        ' \
       | column -t -s $'\t' \
       | awk '
           /rc/ {printf("\033[%dm%s\033[0m\n",30,$0);next}
