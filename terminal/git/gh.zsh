@@ -19,7 +19,7 @@ gh_cd() {
 		mkdir -p "${HOME}/src/gh/${ORG}"
 		cd "${HOME}/src/gh/${ORG}" || return
 		if [ ! -d "${REPO}" ]; then
-			git clone --recursive "gh:${ORG}/${REPO}" "$HOME/src/gh/${ORG}/${REPO}" || return
+			git clone --recursive "git@github.com:${ORG}/${REPO}" "$HOME/src/gh/${ORG}/${REPO}" || return
 		fi
 		cd "${HOME}/src/gh/${ORG}/${REPO}" || return
   fi
