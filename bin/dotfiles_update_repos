@@ -20,13 +20,17 @@ testAndPull() {
   fi
 }
 
-while read d; do
+while read -r d; do
   cd "$d" || return
   tput bold
-  printf "%-30s" "$(echo -ne "$d" | perl -pe "s:$HOME:~:g")"
+  printf "%s  " "$(echo -ne "$d" | perl -pe "s:$HOME:~:g")"
   tput sgr0
-  printf "%s\n" "$(git current-branch 2>/dev/null)"
-
+  if [ -d .git ]; then
+    tput setaf "${TPUT_Black}"
+    printf "%s (%s)" "$(git remote get-url "$(git upstream)")" "$(git current-branch 2>/dev/null)"
+    tput sgr0
+  fi
+  echo ""
   echo ""
   { testAndPull 2>&1 1>&3 3>&- | padErr; } 3>&1 1>&2 | padOut
   echo ""
