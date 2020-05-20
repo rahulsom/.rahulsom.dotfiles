@@ -47,16 +47,33 @@ local _sdk_commands=(
 )
 
 _listInstalledVersions() {
-  __sdkman_build_version_csv $1 | sed -e "s/,/ /g"
+  if [ "$1" = "java" ]; then
+    __sdkman_list_versions $1 | grep "|" | grep -v Identifier | \
+      grep -E 'installed|local only' | \
+      cut -d "|" -f 6
+  else
+    __sdkman_build_version_csv $1 | sed -e "s/,/ /g"
+  fi
 }
 
 _listInstallableVersions() {
-  __sdkman_list_versions $1 | grep "^ " | sed -e "s/\* /*/g" | \
-      sed -e "s/>//g" | xargs -n 1 echo | grep -v "^*"
+  if [ "$1" = "java" ]; then
+    __sdkman_list_versions $1 | grep "|" | grep -v Identifier | \
+      grep -v 'installed' | grep -v 'local only' | \
+      cut -d "|" -f 6
+  else
+    __sdkman_list_versions $1 | grep "^ " | sed -e "s/\* /*/g" | \
+        sed -e "s/>//g" | xargs -n 1 echo | grep -v "^*"
+  fi
 }
 
 _listAllVersion() {
-  __sdkman_list_versions $1 | grep "^ " | sed -e "s/\*/ /g" | sed -e "s/>//g"
+  if [ "$1" = "java" ]; then
+    __sdkman_list_versions $1 | grep "|" | grep -v Identifier | \
+      cut -d "|" -f 6
+  else
+    __sdkman_list_versions $1 | grep "^ " | sed -e "s/\*/ /g" | sed -e "s/>//g"
+  fi
 }
 
 _sdk () {
