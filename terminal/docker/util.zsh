@@ -13,3 +13,7 @@ cadvisor() {
   open http://localhost:1234/
 }
 alias watchtower='docker run -d --restart always --name watchtower -v /var/run/docker.sock:/var/run/docker.sock centurylink/watchtower'
+
+speedtest() {
+  docker run --rm pschmitt/speedtest
+}
