@@ -24,7 +24,14 @@ function localStatus() {
   AGE=$(git show --pretty=format:"%cr" $1 | head -n 1 | cut -d "," -f 1)
   BEHIND=$(git log --no-merges $1..${SYNC_BRANCH} --pretty=oneline | wc -l)
   AHEAD=$(git log --no-merges ${SYNC_BRANCH}..$1 --pretty=oneline | wc -l)
-  printf "%-40s %15s ${TEXT_GREEN}%5d ${TEXT_RED}%5d${RESET_FORMATTING}\n" $1 "$AGE" $AHEAD $BEHIND
+  COMMENT=""
+  if [ $AHEAD = 0 ]; then
+    if [ $1 != master ] && [ $1 != develop ]; then
+      COMMENT="git branch -D $1"
+      echo $COMMENT >> /tmp/commands.txt
+    fi
+  fi
+  jo type=local branch="$1" age="$AGE" aheadSync="$AHEAD" behindSync="$BEHIND" fix="$COMMENT"
 }
 function remoteStatus() {
   AGE=$(git show --pretty=format:"%cr" origin/$1 | head -n 1 | cut -d "," -f 1)
@@ -37,7 +44,7 @@ function remoteStatus() {
       echo $COMMENT >> /tmp/commands.txt
     fi
   fi
-  printf "%-40s %15s %-20s  ${TEXT_GREEN}%5d ${TEXT_RED}%5d${RESET_FORMATTING}      %s\n" $1 "$AGE" "" $AHEAD $BEHIND "$COMMENT"
+  jo type=remote branch="$1" age="$AGE" aheadSync="$AHEAD" behindSync="$BEHIND" fix="$COMMENT"
 }
 function dualStatus() {
   AGE=$(git show --pretty=format:"%cr" $1 -- | head -n 1 | cut -d "," -f 1)
@@ -52,27 +59,35 @@ function dualStatus() {
       echo $COMMENT >> /tmp/commands.txt
     fi
   fi
-  printf "%-40s %15s ${TEXT_GREEN}%5d ${TEXT_RED}%5d %10s${TEXT_GREEN}%5d ${TEXT_RED}%5d${RESET_FORMATTING}      %s\n" \
-      $1 "$AGE" $AHEAD_ORIGIN $BEHIND_ORIGIN "" $AHEAD_SYNC $BEHIND_SYNC "$COMMENT"
+  jo type=synced branch="$1" age="$AGE" aheadOrigin="$AHEAD_ORIGIN" behindOrigin="$BEHIND_ORIGIN" aheadSync="$AHEAD_SYNC" behindSync="$BEHIND_SYNC" fix="$COMMENT"
 }
 localBranches > /tmp/$$.local.tmp
 remoteBranches > /tmp/$$.remote.tmp
 comm -12 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.both.tmp
 comm -13 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.remoteonly.tmp
 comm -23 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.localonly.tmp
+
+addSeparator() {
+  jo fix="SEPARATOR" branch="$1" >> /tmp/$$.final.tmp
+}
+jo type=type branch=branch age=age aheadOrigin="vs" behindOrigin="or" aheadSync="vs" behindSync="ta" fix="fix"> /tmp/$$.final.tmp
+jo type="" branch="" age="" aheadOrigin="+" behindOrigin="-" aheadSync="+" behindSync="-" fix="">> /tmp/$$.final.tmp
+addSeparator ""
+
 if [ $(wc -l /tmp/$$.localonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  printf "${TEXT_RED}%-56s${RESET_FORMATTING} %s\n" "Local Only Branches" "vs ${SYNC_BRANCH}"
-  cat /tmp/$$.localonly.tmp | while read -r i; do localStatus "$i"; done | sort -k 1 -n
-  echo ""
+  addSeparator "Local"
+  cat /tmp/$$.localonly.tmp | while read -r i; do localStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done >> /tmp/$$.final.tmp
+  addSeparator ""
 fi
 if [ $(wc -l /tmp/$$.remoteonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  printf "${TEXT_RED}%-56s${RESET_FORMATTING} %-20s  %s\n" "Remote Only Branches" "" "vs ${SYNC_BRANCH}"
-  cat /tmp/$$.remoteonly.tmp | while read -r i; do remoteStatus "$i"; done | sort -k 1 -n
-  echo ""
+  addSeparator "Remote"
+  cat /tmp/$$.remoteonly.tmp | while read -r i; do remoteStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done>> /tmp/$$.final.tmp
+  addSeparator ""
 fi
 if [ $(wc -l /tmp/$$.both.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  printf "${TEXT_GREEN}%-56s${RESET_FORMATTING} %-20s %s\n" "Synced Branches" "vs origin" "and ${SYNC_BRANCH}"
-  cat /tmp/$$.both.tmp | while read -r i; do dualStatus "$i"; done | sort -k 1 -n
-  echo ""
+  addSeparator "Synced"
+  cat /tmp/$$.both.tmp | while read -r i; do dualStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done>> /tmp/$$.final.tmp
+  addSeparator ""
 fi
+cat /tmp/$$.final.tmp | jq -cs '.' | jq -r '.[] | "\(.branch)\t\(.age)\t\(.aheadOrigin)\t\(.behindOrigin)\t\(.aheadSync)\t\(.behindSync)\t\(.fix)"' | sed -e 's/null/ /g' | column -t -s$'\t' | sed -e "s/SEPARATOR//g"
 rm /tmp/$$.*.tmp
