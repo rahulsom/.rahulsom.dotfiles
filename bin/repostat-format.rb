@@ -51,12 +51,12 @@ widths = {
 def print_row(row, widths)
   r = ''
   r += (row['fix'] || '').ljust(widths[:fix]) + Colorizator.colorize('    # ', :black)
-  r += (row['branch'].to_s || '').ljust(widths[:branch]) + ' | '
-  r += (row['age'] || '').rjust(widths[:age]) + ' | '
-  r += Colorizator.colorize((row['aheadOrigin']&.to_s || '').rjust(widths[:aheadOrigin]), :green, :default, bold: (row['aheadOrigin'] != 0)) + ' | '
-  r += Colorizator.colorize((row['behindOrigin']&.to_s || '').rjust(widths[:behindOrigin]), :red, :default, bold: (row['behindOrigin'] != 0)) + ' | '
-  r += Colorizator.colorize((row['aheadSync']&.to_s || '').rjust(widths[:aheadSync]), :green, :default, bold: (row['aheadSync'] != 0)) + ' | '
-  r += Colorizator.colorize((row['behindSync']&.to_s || '').rjust(widths[:behindSync]), :red, :default, bold: (row['behindSync'] != 0)) + ' |     '
+  r += (row['branch'].to_s || '').ljust(widths[:branch]) + Colorizator.colorize(' | ', :black)
+  r += (row['age'] || '').rjust(widths[:age]) + Colorizator.colorize(' | ', :black)
+  r += Colorizator.colorize((row['aheadOrigin']&.to_s || '').rjust(widths[:aheadOrigin]), :green, :default, bold: (row['aheadOrigin'] != 0)) + Colorizator.colorize(' | ', :black)
+  r += Colorizator.colorize((row['behindOrigin']&.to_s || '').rjust(widths[:behindOrigin]), :red, :default, bold: (row['behindOrigin'] != 0)) + Colorizator.colorize(' | ', :black)
+  r += Colorizator.colorize((row['aheadSync']&.to_s || '').rjust(widths[:aheadSync]), :green, :default, bold: (row['aheadSync'] != 0)) + Colorizator.colorize(' | ', :black)
+  r += Colorizator.colorize((row['behindSync']&.to_s || '').rjust(widths[:behindSync]), :red, :default, bold: (row['behindSync'] != 0)) + Colorizator.colorize(' | ', :black)
   puts r
 end
 
