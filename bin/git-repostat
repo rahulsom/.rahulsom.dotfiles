@@ -67,27 +67,15 @@ comm -12 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.both.tmp
 comm -13 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.remoteonly.tmp
 comm -23 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.localonly.tmp
 
-addSeparator() {
-  jo fix="SEPARATOR" branch="$1" >> /tmp/$$.final.tmp
-}
-jo type=type branch=branch age=age aheadOrigin="vs" behindOrigin="or" aheadSync="vs" behindSync="ta" fix="fix"> /tmp/$$.final.tmp
-jo type="" branch="" age="" aheadOrigin="+" behindOrigin="-" aheadSync="+" behindSync="-" fix="">> /tmp/$$.final.tmp
-addSeparator ""
-
 if [ $(wc -l /tmp/$$.localonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  addSeparator "Local"
   cat /tmp/$$.localonly.tmp | while read -r i; do localStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done >> /tmp/$$.final.tmp
-  addSeparator ""
 fi
 if [ $(wc -l /tmp/$$.remoteonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  addSeparator "Remote"
   cat /tmp/$$.remoteonly.tmp | while read -r i; do remoteStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done>> /tmp/$$.final.tmp
-  addSeparator ""
 fi
 if [ $(wc -l /tmp/$$.both.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  addSeparator "Synced"
   cat /tmp/$$.both.tmp | while read -r i; do dualStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done>> /tmp/$$.final.tmp
-  addSeparator ""
 fi
-cat /tmp/$$.final.tmp | jq -cs '.' | jq -r '.[] | "\(.branch)\t\(.age)\t\(.aheadOrigin)\t\(.behindOrigin)\t\(.aheadSync)\t\(.behindSync)\t\(.fix)"' | sed -e 's/null/ /g' | column -t -s$'\t' | sed -e "s/SEPARATOR//g"
+
+cat /tmp/$$.final.tmp | jq -cs '.' | repostat-format.rb
 rm /tmp/$$.*.tmp
