@@ -16,3 +16,7 @@
 	# Prevent showing files whose names contain non-ASCII symbols as unversioned.
 	# http://michael-kuehnel.de/git/2014/11/21/git-mac-osx-and-german-umlaute.html
 	precomposeunicode = false
+
+[pull]
+  # Fast forward by default. You can --rebase or --no-rebase if you like
+  ff = only
