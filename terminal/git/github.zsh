@@ -1,5 +1,5 @@
-gh_help() {
-  echo "Usage: gh <subcommand> [options]"
+github_help() {
+  echo "Usage: github <subcommand> [options]"
   echo ""
   echo "Subcommands:"
   echo "    browse   Open a GitHub project page in the default browser"
@@ -7,11 +7,11 @@ gh_help() {
   echo "    tree     Print tree of github repositories"
   echo ""
   echo "For help with each subcommand run:"
-  echo "gh <subcommand> -h|--help"
+  echo "github <subcommand> -h|--help"
   echo ""
 }
 
-gh_cd() {
+github_cd() {
 	if [ "$(echo $1 | grep -c /)" = "1" ]; then
 		ORG=$(echo "$1" | cut -d / -f 1)
 		REPO=$(echo "$1" | cut -d / -f 2)
@@ -25,26 +25,26 @@ gh_cd() {
   fi
 }
 
-gh_tree() {
+github_tree() {
   tree -L 2 "${HOME}/src/gh"
 }
 
-gh_browse() {
+github_browse() {
 	open "$(git remote -v | awk '/fetch/{print $2}' | sed -Ee 's#(git@|git://)#http://#' -e 's@com:@com/@')" | head -n1
 }
 
-gh() {
+github() {
   subcommand=$1
   case $subcommand in
   "" | "-h" | "--help")
-    gh_help
+    github_help
     ;;
   *)
     shift
-    "gh_${subcommand}" "$@"
+    "github_${subcommand}" "$@"
     if [ $? = 127 ]; then
       echo "Error: '$subcommand' is not a known subcommand." >&2
-      echo "       Run 'gh --help' for a list of known subcommands." >&2
+      echo "       Run 'github --help' for a list of known subcommands." >&2
       return 1
     fi
     ;;

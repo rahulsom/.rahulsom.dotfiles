@@ -1,4 +1,4 @@
-_gh_users() {
+_github_users() {
   queryString=$1
   hub api graphql -f query="query FindUsersOrOrganizations {
     users:search(type:USER, query: \"$queryString\", first:10) {
@@ -17,7 +17,7 @@ _gh_users() {
   }" | jq -r  '.data.users.nodes[] | "\(.login):\(if .name == null then .login else .name end)"' | sed -e 's/:null"/:"/g'
 }
 
-_gh_currentUser() {
+_github_currentUser() {
   hub api graphql -f query="query WhoAmI {
     viewer {
       login
@@ -26,7 +26,7 @@ _gh_currentUser() {
   }" | jq -r  '.data.viewer | "\(.login):\(if .name == null then .login else .name end)"' | sed -e 's/:null"/:"/g'
 }
 
-_gh_repos() {
+_github_repos() {
   queryString="$1"
   hub api graphql -f query="query repos {
     repositories:search(type:REPOSITORY, query: \"$queryString\", first:10) {
@@ -41,11 +41,11 @@ _gh_repos() {
   }" | jq -r  '.data.repositories.nodes[] | "\(.nameWithOwner):\(if .description == null then .nameWithOwner else .description end)"' | sed -e 's/:null"/:"/g'
 }
 
-_gh() {
+_github() {
   case $CURRENT in
   2)
     local -a subcmds=('browse:Browse to a repo' 'cd:Go to a repo. Clone if not already present locally' 'tree:List currently checked out repos')
-    _describe 'gh' subcmds
+    _describe 'github' subcmds
     ;;
   3)
     case "${words[2]}" in
@@ -54,14 +54,14 @@ _gh() {
         if [ "$(echo "${words[3]}" | grep -c /)" -gt 0 ]; then
           local ORG=$(echo "${words[3]}" | cut -d / -f 1)
           local REPO=$(echo "${words[3]}" | cut -d / -f 2)
-          local repos=("${(@f)$(_gh_repos "user:$ORG $REPO")}")
+          local repos=("${(@f)$(_github_repos "user:$ORG $REPO")}")
           _describe 'cd' repos
         else
-          local users=("${(@f)$(_gh_users ${words[3]})}")
+          local users=("${(@f)$(_github_users ${words[3]})}")
           _describe 'cd' users
         fi
       else
-        local currentUser=("${(@f)$(_gh_currentUser)}")
+        local currentUser=("${(@f)$(_github_currentUser)}")
         _describe 'cd' currentUser
       fi
       ;;
@@ -70,4 +70,4 @@ _gh() {
   esac
 }
 
-compdef _gh gh
+compdef _github github
