@@ -32,7 +32,7 @@ json.insert(0, {
 })
 
 def column_width(list, colname)
-  return list.map { |row| row[colname]&.to_s&.length || 0 }.max
+  list.map { |row| (row[colname] == nil) ? 0 : row[colname].to_s.length }.max
 end
 
 widths = {
@@ -42,21 +42,33 @@ widths = {
     :behindOrigin => column_width(json, 'behindOrigin'),
     :aheadSync    => column_width(json, 'aheadSync'),
     :behindSync   => column_width(json, 'behindSync'),
-    :fix          => column_width(json, 'fix'),
+    :fix          => 70,
 
 }
 
 # format = "%%-%ds | %%%ds | %%%ds | %%%ds | %%%ds | %%%ds | %%-%ds " % [branch, age, aheadOrigin, behindOrigin, aheadSync, behindSync, fix]
 
+def render_number(row, widths, field_name, width_key, color)
+  field_value = row[field_name]
+  if field_value == nil
+    field_value = ''
+  end
+  Colorizator.colorize(field_value.to_s.rjust(widths[width_key]), color, :default, bold: (field_value != 0)) + Colorizator.colorize(' | ', :black)
+end
+
 def print_row(row, widths)
   r = ''
-  r += (row['fix'] || '').ljust(widths[:fix]) + Colorizator.colorize('    # ', :black)
+  r += (row['fix'] || '').ljust(widths[:fix])
+  if (row['fix'] || '').length > widths[:fix]
+    r += "\n" + ''
+  end
+  r += Colorizator.colorize('    # ', :black)
   r += (row['branch'].to_s || '').ljust(widths[:branch]) + Colorizator.colorize(' | ', :black)
   r += (row['age'] || '').rjust(widths[:age]) + Colorizator.colorize(' | ', :black)
-  r += Colorizator.colorize((row['aheadOrigin']&.to_s || '').rjust(widths[:aheadOrigin]), :green, :default, bold: (row['aheadOrigin'] != 0)) + Colorizator.colorize(' | ', :black)
-  r += Colorizator.colorize((row['behindOrigin']&.to_s || '').rjust(widths[:behindOrigin]), :red, :default, bold: (row['behindOrigin'] != 0)) + Colorizator.colorize(' | ', :black)
-  r += Colorizator.colorize((row['aheadSync']&.to_s || '').rjust(widths[:aheadSync]), :green, :default, bold: (row['aheadSync'] != 0)) + Colorizator.colorize(' | ', :black)
-  r += Colorizator.colorize((row['behindSync']&.to_s || '').rjust(widths[:behindSync]), :red, :default, bold: (row['behindSync'] != 0)) + Colorizator.colorize(' | ', :black)
+  r += render_number(row, widths, 'aheadOrigin', :aheadOrigin, :green)
+  r += render_number(row, widths, 'behindOrigin', :behindOrigin, :red)
+  r += render_number(row, widths, 'aheadSync', :aheadSync, :green)
+  r += render_number(row, widths, 'behindSync', :behindSync, :red)
   puts r
 end
 
