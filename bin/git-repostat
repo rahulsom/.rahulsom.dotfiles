@@ -1,81 +1,164 @@
-#!/bin/bash
-TEXT_RED=`tput setaf 1`
-TEXT_GREEN=`tput setaf 2`
-RESET_FORMATTING=`tput sgr0`
-if [ $(git remote | grep -c upstream) = 1 ]; then
-  UP_REMOTE=upstream
-else
-  UP_REMOTE=origin
-fi
-if [ $(git branch | grep -c develop) = 1 ]; then
-  UP_BRANCH=develop
-else
-  UP_BRANCH=master
-fi
-SYNC_BRANCH=${CENTRAL_BRANCH:-$UP_REMOTE/$UP_BRANCH}
-function localBranches() {
-  git branch | sed -e s/\*//g | tr -s " " | cut -d " " -f 2 | sort
-}
-function remoteBranches() {
-  git branch -r | grep origin | grep -v HEAD | sed -e s/origin\\///g | \
-      tr -s " " | cut -d " " -f 2 | sort
-}
-function localStatus() {
-  AGE=$(git show --pretty=format:"%cr" $1 | head -n 1 | cut -d "," -f 1)
-  BEHIND=$(git log --no-merges $1..${SYNC_BRANCH} --pretty=oneline | wc -l)
-  AHEAD=$(git log --no-merges ${SYNC_BRANCH}..$1 --pretty=oneline | wc -l)
-  COMMENT=""
-  if [ $AHEAD = 0 ]; then
-    if [ $1 != master ] && [ $1 != develop ]; then
-      COMMENT="git branch -D $1"
-      echo $COMMENT >> /tmp/commands.txt
-    fi
-  fi
-  jo type=local branch="$1" age="$AGE" aheadSync="$AHEAD" behindSync="$BEHIND" fix="$COMMENT"
-}
-function remoteStatus() {
-  AGE=$(git show --pretty=format:"%cr" origin/$1 | head -n 1 | cut -d "," -f 1)
-  BEHIND=$(git log --no-merges origin/$1..${SYNC_BRANCH} --pretty=oneline | wc -l)
-  AHEAD=$(git log --no-merges ${SYNC_BRANCH}..origin/$1 --pretty=oneline | wc -l)
-  COMMENT=""
-  if [ $AHEAD = 0 ]; then
-    if [ $1 != master ] && [ $1 != develop ]; then
-      COMMENT="git push origin :$1"
-      echo $COMMENT >> /tmp/commands.txt
-    fi
-  fi
-  jo type=remote branch="$1" age="$AGE" aheadSync="$AHEAD" behindSync="$BEHIND" fix="$COMMENT"
-}
-function dualStatus() {
-  AGE=$(git show --pretty=format:"%cr" $1 -- | head -n 1 | cut -d "," -f 1)
-  BEHIND_SYNC=$(git log --no-merges $1..${SYNC_BRANCH} --pretty=oneline | wc -l)
-  AHEAD_SYNC=$(git log --no-merges ${SYNC_BRANCH}..$1 --pretty=oneline | wc -l)
-  BEHIND_ORIGIN=$(git log --no-merges $1..origin/$1 --pretty=oneline | wc -l)
-  AHEAD_ORIGIN=$(git log --no-merges origin/$1..$1 --pretty=oneline | wc -l)
-  COMMENT=""
-  if [ $AHEAD_SYNC = 0 ]; then
-    if [ $1 != master ] && [ $1 != develop ]; then
-      COMMENT="git branch -D $1; git push origin :$1"
-      echo $COMMENT >> /tmp/commands.txt
-    fi
-  fi
-  jo type=synced branch="$1" age="$AGE" aheadOrigin="$AHEAD_ORIGIN" behindOrigin="$BEHIND_ORIGIN" aheadSync="$AHEAD_SYNC" behindSync="$BEHIND_SYNC" fix="$COMMENT"
-}
-localBranches > /tmp/$$.local.tmp
-remoteBranches > /tmp/$$.remote.tmp
-comm -12 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.both.tmp
-comm -13 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.remoteonly.tmp
-comm -23 /tmp/$$.local.tmp /tmp/$$.remote.tmp > /tmp/$$.localonly.tmp
+#!/usr/bin/ruby
+#
 
-if [ $(wc -l /tmp/$$.localonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  cat /tmp/$$.localonly.tmp | while read -r i; do localStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done >> /tmp/$$.final.tmp
-fi
-if [ $(wc -l /tmp/$$.remoteonly.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  cat /tmp/$$.remoteonly.tmp | while read -r i; do remoteStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done>> /tmp/$$.final.tmp
-fi
-if [ $(wc -l /tmp/$$.both.tmp | tr -s " " | cut -d " " -f 2) != 0 ]; then
-  cat /tmp/$$.both.tmp | while read -r i; do dualStatus "$i"; done | sort -k 1 -n | while read -r l; do echo $l | jq -c .; done>> /tmp/$$.final.tmp
-fi
+class Colorizator
+  COLOURS    = {default:    '38', black: '30', red: '31', green: '32', brown: '33', blue: '34', purple: '35',
+                cyan:       '36', gray: '37', dark_gray: '1;30', light_red: '1;31', light_green: '1;32', yellow: '1;33',
+                light_blue: '1;34', light_purple: '1;35', light_cyan: '1;36', white: '1;37'}.freeze
+  BG_COLOURS = {default: '0', black: '40', red: '41', green: '42', brown: '43', blue: '44',
+                purple:  '45', cyan: '46', gray: '47', dark_gray: '100', light_red: '101', light_green: '102',
+                yellow:  '103', light_blue: '104', light_purple: '105', light_cyan: '106', white: '107'}.freeze
 
-cat /tmp/$$.final.tmp | jq -cs '.' | repostat-format.rb
-rm /tmp/$$.*.tmp
+  FONT_OPTIONS = {bold: '1', dim: '2', italic: '3', underline: '4', reverse: '7', hidden: '8'}.freeze
+
+  def self.colorize(text, colour = :default, bg_colour = :default, **options)
+    colour_code    = COLOURS[colour]
+    bg_colour_code = BG_COLOURS[bg_colour]
+    font_options   = options.select { |k, v| v && FONT_OPTIONS.key?(k) }.keys
+    font_options   = font_options.map { |e| FONT_OPTIONS[e] }.join(';').squeeze
+    return "\e[#{bg_colour_code};#{font_options};#{colour_code}m#{text}\e[0m".squeeze(';')
+  end
+end
+
+def column_width(list, colname)
+  list.map { |row| (row[colname] == nil) ? 0 : row[colname].to_s.length }.max
+end
+
+def render_number(row, widths, field_name, width_key, color)
+  field_value = row[field_name]
+  if field_value == nil
+    field_value = ''
+  end
+  Colorizator.colorize(field_value.to_s.rjust(widths[width_key]), color, :default, bold: (field_value != 0)) + Colorizator.colorize(' | ', :black)
+end
+
+def render_string(row, widths, field_name, width_key, just)
+  if just == :rjust
+    (row[field_name] || '').rjust(widths[width_key]) + Colorizator.colorize(' | ', :black)
+  else
+    (row[field_name] || '').ljust(widths[width_key]) + Colorizator.colorize(' | ', :black)
+  end
+end
+
+def print_row(row, widths)
+  r = ''
+  r += (row['fix'] || '').ljust(widths[:fix])
+  if (row['fix'] || '').length > widths[:fix]
+    r += "\n" + ''
+  end
+  r += Colorizator.colorize('    # ', :black)
+  r += render_string(row, widths, :branch, :branch, :ljust)
+  r += render_string(row, widths, :age, :age, :rjust)
+  r += render_number(row, widths, :aheadOrigin, :aheadOrigin, :green)
+  r += render_number(row, widths, :behindOrigin, :behindOrigin, :red)
+  r += render_number(row, widths, :aheadSync, :aheadSync, :green)
+  r += render_number(row, widths, :behindSync, :behindSync, :red)
+  puts r
+end
+
+def print_type(json, header, type, widths)
+  if json.find_all { |row| row[:type] == type }.size > 0
+    if header != ''
+      puts ''
+      h = ''.ljust(widths[:fix]) + Colorizator.colorize('    # ', :black)
+      h += Colorizator.colorize(header, :white, :default, bold: true)
+      puts h
+    end
+    json.find_all { |row| row[:type] == type }
+        .each { |row| print_row(row, widths) }
+  end
+end
+
+local_branches       = `git branch | sed -e s/\\*//g | tr -s " " | cut -d " " -f 2 | sort`.split(' ')
+remote_branches      = `git branch -r | grep origin | grep -v HEAD`.split(' ').map { |name| name.gsub('origin/', '') }
+tracked_branches     = local_branches.&(remote_branches)
+local_only_branches  = local_branches - tracked_branches
+remote_only_branches = remote_branches - tracked_branches
+
+data = [
+    {
+        :type        => :header,
+        :fix         => '',
+        :branch      => 'Branch', :age => 'Age',
+        :aheadOrigin => 'orgn+', :behindOrigin => 'orgn-',
+        :aheadSync   => 'trgt+', :behindSync => 'trgt-',
+    }
+]
+
+def find_sync_branch
+  remote         = `git remote`.include?('upstream') ? 'upstream' : 'origin'
+  primary_branch = `git branch`.include?('develop') ? 'develop' : 'master'
+  "#{remote}/#{primary_branch}"
+end
+
+SYNC_BRANCH = find_sync_branch
+
+def get_age(name)
+  `git show --pretty=format:"%cr" #{name} | head -n 1 | cut -d "," -f 1`.strip!
+end
+
+def get_commits(from, to)
+  `git log --no-merges #{from}..#{to} --pretty=oneline | wc -l`.to_i
+end
+
+local_only_branches.each do |name|
+  ret_val           = {
+      type:       :local,
+      branch:     name,
+      age:        get_age(name),
+      behindSync: get_commits(name, SYNC_BRANCH),
+      aheadSync:  get_commits(SYNC_BRANCH, name),
+  }
+  excluded_branches = ['master', 'develop', 'gh-pages']
+  if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
+    ret_val[:fix] = "git branch -D #{name}"
+  end
+  data.append ret_val
+end
+
+remote_only_branches.each do |name|
+  ret_val           = {
+      type:       :remote,
+      branch:     name,
+      age:        get_age("origin/#{name}"),
+      behindSync: get_commits("origin/#{name}", SYNC_BRANCH),
+      aheadSync:  get_commits(SYNC_BRANCH, "origin/#{name}"),
+  }
+  excluded_branches = ['master', 'develop', 'gh-pages']
+  if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
+    ret_val[:fix] = "git push origin :#{name}"
+  end
+  data.append ret_val
+end
+
+tracked_branches.each do |name|
+  ret_val           = {
+      type:         :tracked,
+      branch:       name,
+      age:          get_age(name),
+      behindSync:   get_commits(name, SYNC_BRANCH),
+      aheadSync:    get_commits(SYNC_BRANCH, name),
+      behindOrigin: get_commits(name, "origin/#{name}"),
+      aheadOrigin:  get_commits("origin/#{name}", name),
+  }
+  excluded_branches = ['master', 'develop', 'gh-pages']
+  if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
+    ret_val[:fix] = "git push origin :#{name}"
+  end
+  data.append ret_val
+end
+
+widths = {
+    branch:       column_width(data, :branch),
+    age:          column_width(data, :age),
+    aheadOrigin:  column_width(data, :aheadOrigin),
+    behindOrigin: column_width(data, :behindOrigin),
+    aheadSync:    column_width(data, :aheadSync),
+    behindSync:   column_width(data, :behindSync),
+    fix:          70,
+}
+
+print_type(data, '', :header, widths)
+print_type(data, 'Local', :local, widths)
+print_type(data, 'Remote', :remote, widths)
+print_type(data, 'Tracked', :tracked, widths)
