@@ -42,8 +42,8 @@ end
 
 def print_row(row, widths)
   r = ''
-  r += (row['fix'] || '').ljust(widths[:fix])
-  if (row['fix'] || '').length > widths[:fix]
+  r += (row[:fix] || '').ljust(widths[:fix])
+  if (row[:fix] || '').length > widths[:fix]
     r += "\n" + ''
   end
   r += Colorizator.colorize('    # ', :black)
@@ -162,3 +162,6 @@ print_type(data, '', :header, widths)
 print_type(data, 'Local', :local, widths)
 print_type(data, 'Remote', :remote, widths)
 print_type(data, 'Tracked', :tracked, widths)
+
+puts("")
+puts("TARGET: #{SYNC_BRANCH}")
