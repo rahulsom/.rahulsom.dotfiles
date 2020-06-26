@@ -44,9 +44,9 @@ def print_row(row, widths)
   r = ''
   r += (row[:fix] || '').ljust(widths[:fix])
   if (row[:fix] || '').length > widths[:fix]
-    r += "\n" + ''
+    r += "\n" + ''.ljust(widths[:fix])
   end
-  r += Colorizator.colorize('    # ', :black)
+  r += Colorizator.colorize(' # ', :black)
   r += render_string(row, widths, :branch, :branch, :ljust)
   r += render_string(row, widths, :age, :age, :rjust)
   r += render_number(row, widths, :aheadOrigin, :aheadOrigin, :green)
@@ -60,7 +60,7 @@ def print_type(json, header, type, widths)
   if json.find_all { |row| row[:type] == type }.size > 0
     if header != ''
       puts ''
-      h = ''.ljust(widths[:fix]) + Colorizator.colorize('    # ', :black)
+      h = ''.ljust(widths[:fix]) + Colorizator.colorize(' # ', :black)
       h += Colorizator.colorize(header, :white, :default, bold: true)
       puts h
     end
@@ -143,7 +143,7 @@ tracked_branches.each do |name|
   }
   excluded_branches = ['master', 'develop', 'gh-pages']
   if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
-    ret_val[:fix] = "git push origin :#{name}"
+    ret_val[:fix] = "git branch -D #{name}; git push origin :#{name}"
   end
   data.append ret_val
 end
