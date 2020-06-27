@@ -37,10 +37,15 @@ def render_number(row, widths, field_name, width_key, color)
 end
 
 def render_string(row, widths, field_name, width_key, just)
-  if just == :rjust
-    (row[field_name] || '').rjust(widths[width_key]) + Colorizator.colorize(' | ', :black)
+  if width_key == nil
+    padding = widths.collect { |k,v| v }.sum - widths[:fix] + 15
   else
-    (row[field_name] || '').ljust(widths[width_key]) + Colorizator.colorize(' | ', :black)
+    padding = widths[width_key]
+  end
+  if just == :rjust
+    (row[field_name] || '').rjust(padding) + Colorizator.colorize(' | ', :black)
+  else
+    (row[field_name] || '').ljust(padding) + Colorizator.colorize(' | ', :black)
   end
 end
 
@@ -51,12 +56,16 @@ def print_row(row, widths)
     r += "\n" + ''.ljust(widths[:fix])
   end
   r += Colorizator.colorize(' # ', :black)
-  r += render_string(row, widths, :branch, :branch, :ljust)
-  r += render_string(row, widths, :age, :age, :rjust)
-  r += render_number(row, widths, :aheadOrigin, :aheadOrigin, :green)
-  r += render_number(row, widths, :behindOrigin, :behindOrigin, :red)
-  r += render_number(row, widths, :aheadSync, :aheadSync, :green)
-  r += render_number(row, widths, :behindSync, :behindSync, :red)
+  if row[:type] != :footer
+    r += render_string(row, widths, :branch, :branch, :ljust)
+    r += render_string(row, widths, :age, :age, :rjust)
+    r += render_number(row, widths, :aheadOrigin, :aheadOrigin, :green)
+    r += render_number(row, widths, :behindOrigin, :behindOrigin, :red)
+    r += render_number(row, widths, :aheadSync, :aheadSync, :green)
+    r += render_number(row, widths, :behindSync, :behindSync, :red)
+  else
+    r += render_string(row, widths, :branch, nil, :rjust)
+  end
   puts r
 end
 
