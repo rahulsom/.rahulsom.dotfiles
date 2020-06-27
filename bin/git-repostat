@@ -12,11 +12,15 @@ class Colorizator
   FONT_OPTIONS = {bold: '1', dim: '2', italic: '3', underline: '4', reverse: '7', hidden: '8'}.freeze
 
   def self.colorize(text, colour = :default, bg_colour = :default, **options)
-    colour_code    = COLOURS[colour]
-    bg_colour_code = BG_COLOURS[bg_colour]
-    font_options   = options.select { |k, v| v && FONT_OPTIONS.key?(k) }.keys
-    font_options   = font_options.map { |e| FONT_OPTIONS[e] }.join(';').squeeze
-    return "\e[#{bg_colour_code};#{font_options};#{colour_code}m#{text}\e[0m".squeeze(';')
+    if ! $stdout.tty?
+      return text
+    else
+      colour_code    = COLOURS[colour]
+      bg_colour_code = BG_COLOURS[bg_colour]
+      font_options   = options.select { |k, v| v && FONT_OPTIONS.key?(k) }.keys
+      font_options   = font_options.map { |e| FONT_OPTIONS[e] }.join(';').squeeze
+      return "\e[#{bg_colour_code};#{font_options};#{colour_code}m#{text}\e[0m".squeeze(';')
+    end
   end
 end
 
