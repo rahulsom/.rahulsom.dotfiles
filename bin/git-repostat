@@ -58,8 +58,8 @@ end
 
 def print_type(json, header, type, widths)
   if json.find_all { |row| row[:type] == type }.size > 0
+    puts ''
     if header != ''
-      puts ''
       h = ''.ljust(widths[:fix]) + Colorizator.colorize(' # ', :black)
       h += Colorizator.colorize(header, :white, :default, bold: true)
       puts h
@@ -158,10 +158,12 @@ widths = {
     fix:          70,
 }
 
+data.append ({
+  :type => :footer,
+  :branch => "TARGET: #{SYNC_BRANCH}",
+})
 print_type(data, '', :header, widths)
 print_type(data, 'Local', :local, widths)
 print_type(data, 'Remote', :remote, widths)
 print_type(data, 'Tracked', :tracked, widths)
-
-puts("")
-puts("TARGET: #{SYNC_BRANCH}")
+print_type(data, '', :footer, widths)
