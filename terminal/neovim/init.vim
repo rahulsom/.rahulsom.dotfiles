@@ -22,6 +22,9 @@ Plugin 'scrooloose/nerdtree'
 Plugin 'tfnico/vim-gradle'
 Plugin 'docker/docker' , {'rtp': '/contrib/syntax/vim/'}
 
+Plugin 'godlygeek/tabular'
+Plugin 'plasticboy/vim-markdown'
+
 " After all plugins...
 call vundle#end()
 filetype plugin indent on
