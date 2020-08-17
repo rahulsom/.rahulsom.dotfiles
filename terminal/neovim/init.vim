@@ -25,6 +25,8 @@ Plugin 'docker/docker' , {'rtp': '/contrib/syntax/vim/'}
 Plugin 'godlygeek/tabular'
 Plugin 'plasticboy/vim-markdown'
 
+Plugin 'editorconfig/editorconfig-vim'
+
 " After all plugins...
 call vundle#end()
 filetype plugin indent on
