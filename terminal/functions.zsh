@@ -364,3 +364,17 @@ EOF
 	fi
 
 }
+
+function init_editorconfig() {
+  INDENT=${1:-2}
+  CONTINUATION=$(($INDENT * 2))
+  cat > .editorconfig << EOF
+[*]
+charset=utf-8
+end_of_line=lf
+insert_final_newline=false
+indent_style=space
+indent_size=$INDENT
+continuation_indent_size=$CONTINUATION
+EOF
+}
