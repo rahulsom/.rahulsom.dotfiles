@@ -1,7 +1,4 @@
 [alias]
-	# View abbreviated SHA, description, and history graph of the latest 20 commits
-	l = log --pretty=oneline -n 20 --graph --abbrev-commit
-
 	# View the current working tree status using the short format
 	s = status -s
 
@@ -118,7 +115,7 @@
 	interactively-rebase-against-origin-master = \
 	  !git rebase --interactive origin/master
 	# Show the commit log with a prettier, clearer history.
-	pretty-one-line-log = log --graph --oneline --decorate
+	pretty-one-line-log = log --graph --oneline --date=short --pretty='format:%C(yellow)%h%Creset %ad %C(black)|%Creset %s%C(yellow)%d%Creset %C(black)%an%Creset'
 	# Commit any changes to files, squash them into the last commit
 	# and update its date.
 	fix-up-previous-commit = !git commit --all --amend \
