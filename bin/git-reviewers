@@ -1,4 +1,4 @@
-#!/usr/bin/bash -ue
+#!/bin/bash -ue
 
 ## Sourced from https://gist.github.com/alekstorm/4949628
 
