@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# sshf
+#   ssh forver
+#
+if [ ! -f ~/.ssh/id_rsa.pub ]; then
+  ssh-keygen
+fi
+
+MYKEY=$(cat ~/.ssh/id_rsa.pub)
+
+ssh $* << EOF
+  mkdir -p .ssh/
+  touch .ssh/authorized_keys
+  if [ \$(cat .ssh/authorized_keys | grep -c "$MYKEY") -eq 0 ]; then
+    echo "$MYKEY" >> ~/.ssh/authorized_keys
+    chmod 700 ~/.ssh
+    chmod 600 ~/.ssh/authorized_keys
+  fi
+EOF
+
+ssh $*
