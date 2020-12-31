@@ -172,7 +172,11 @@ alias wifi='/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Curr
 
 alias ad='asciidoctor -r asciidoctor-diagram'
 
-alias gig='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=4'
+alias gig5='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=5'
+alias gig4='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=4'
+alias gig3='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=3'
+alias gig2='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=2'
+alias gig1='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=1'
 alias plistbuddy='/usr/libexec/PlistBuddy'
 
 alias envsubst=$(find /usr/local/Cellar/gettext -name envsubst | head -1)
