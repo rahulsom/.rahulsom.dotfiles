@@ -1,0 +1,83 @@
+#!/usr/bin/env groovy
+import groovy.json.JsonSlurper
+import groovy.transform.Field
+
+def json = new JsonSlurper().parse(System.in)
+
+if (!(json instanceof Map)) {
+  System.err.println "Input was not json"
+  System.exit 1
+}
+
+if (args.length != 1) {
+  System.err.println "Expected arg: className"
+  System.exit 2
+}
+
+@Field boolean hasLinks = false
+
+String buildClass(String name, Map json, int offset = 0) {
+  def indent = "  " * offset
+  def s = new StringWriter()
+  def additionalClasses = []
+  s.println "${indent}@ToString(includePackage = false, includeNames = true)"
+  s.println "${indent}class ${name} {"
+
+  json.each { String k, v ->
+    if (v instanceof String) {
+      s.println "${indent}  String $k"
+    } else if (v instanceof Boolean) {
+      s.println "${indent}  Boolean $k"
+    } else if (v instanceof Number) {
+      s.println "${indent}  BigDecimal $k"
+    } else if (v instanceof Map) {
+      if (v.size() == 1 && v.keySet().toList()[0] == 'href') {
+        s.println "${indent}  Link $k"
+        hasLinks = true
+      } else {
+        additionalClasses << buildClass(toClassName(k), v, offset + 1)
+        s.println "${indent}  ${toClassName(k)} $k"
+      }
+    } else if (v instanceof List) {
+      if (v.size()) {
+        if (v[0] instanceof String) {
+          s.println "${indent}  List<String> $k"
+        } else if (v[0] instanceof Boolean) {
+          s.println "${indent}  List<Boolean> $k"
+        } else if (v[0] instanceof Number) {
+          s.println "${indent}  List<BigDecimal> $k"
+        } else if (v[0] instanceof Map) {
+          additionalClasses << buildClass(toClassName(k), v[0], offset + 1)
+          s.println "${indent}  List<${toClassName(k)}> $k"
+        } else {
+          s.println "${indent}  // List<!!> $k"
+        }
+      }
+    } else {
+      s.println "${indent}  //Object $k"
+    }
+  }
+  if (additionalClasses)
+    s.println('')
+  s.println additionalClasses.join('\n')
+  s.println "${indent}}"
+  if (additionalClasses)
+    s.println('')
+  s.toString()
+}
+
+private String toClassName(String k) {
+  k.startsWith('_') ?
+      toClassName(k[1..-1]) :
+      "${k[0].toUpperCase()}${k[1..-1]}Type"
+}
+
+println buildClass(args[0], json)
+if (hasLinks) {
+  println """\
+    |@ToString(includePackage = false, includeNames = true)
+    |class Link {
+    |  String href
+    |}
+  """.stripMargin()
+}

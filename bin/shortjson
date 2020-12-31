@@ -1,0 +1,130 @@
+#!/usr/bin/env groovy
+@Grab(group = 'org.fusesource.jansi', module = 'jansi', version = '1.17')
+import groovy.json.JsonSlurper
+import groovy.transform.CompileStatic
+import org.fusesource.jansi.Ansi
+import org.fusesource.jansi.AnsiConsole
+
+@CompileStatic
+class ShortJson {
+
+    private static final String INDENT = '  '
+    private static final int MAX_LINE = 200
+
+    public static final String HIDE = Ansi.ansi().fg(Ansi.Color.BLACK)
+    public static final String RESET = Ansi.ansi().reset()
+
+    public static final LC = "${HIDE}{${RESET}"
+    public static final RC = "${HIDE}}${RESET}"
+
+    public static final LB = "${HIDE}[${RESET}"
+    public static final RB = "${HIDE}]${RESET}"
+    public static final COMMA = "${HIDE},${RESET}"
+    public static final LK = Ansi.ansi().fgBright(Ansi.Color.BLUE).a('"')
+    public static final QUOT = '"'
+
+    static String printValue(def v, int offset = 0) {
+        def sw = new StringWriter()
+        if (v instanceof String) {
+            sw.print "${INDENT * offset}\"$v\""
+        } else if (v instanceof Number) {
+            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.YELLOW).a(v).reset()
+        } else if (v instanceof List) {
+            def innerList = writeList(v, offset)
+            if (pLen(trim(innerList)) < MAX_LINE - offset * INDENT.size() && !innerList.contains("{")) {
+                sw.print trim(innerList)
+            } else {
+                sw.print innerList
+            }
+        } else if (v instanceof Map) {
+            def innerMap = writeMap(v, offset)
+            if (pLen(trim(innerMap)) < MAX_LINE - offset * INDENT.size()) {
+                sw.print trim(innerMap)
+            } else {
+                sw.print innerMap
+            }
+        } else if (v instanceof Boolean) {
+            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.GREEN).a(v).reset()
+        } else if (v == null) {
+            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.RED).a(v).reset()
+        }
+        sw.toString()
+    }
+
+    private static int pLen(String input) {
+        plain(input).length()
+    }
+
+    static String plain(String input) {
+        input.replace(HIDE, '').
+                replace(Ansi.ansi().fgBright(Ansi.Color.GREEN).toString(), '').
+                replace(Ansi.ansi().fgBright(Ansi.Color.RED).toString(), '').
+                replace(Ansi.ansi().fgBright(Ansi.Color.BLUE).toString(), '').
+                replace(Ansi.ansi().fgBright(Ansi.Color.YELLOW).toString(), '').
+                replace(RESET, '')
+    }
+
+    private static String writeList(List list, int offset) {
+        def sw = new StringWriter()
+        sw.println LB
+        offset++
+        int index = 0
+        list.each { v ->
+            if (index++) {
+                sw.println COMMA
+            }
+            sw.print printValue(v, offset)
+        }
+        offset--
+        sw.println ""
+        sw.print "${INDENT * offset}${RB}"
+        sw.toString()
+    }
+
+    private static String trim(String innerList) {
+        innerList.
+                replaceAll(/\n/, ' ').
+                replaceAll(/([^ ]) +/, '$1 ').
+                replace("$LC $RC", "${HIDE}{}${RESET}").
+                replace("$LB $RB", "${HIDE}[]${RESET}").
+                replace("$LB $LB", "${HIDE}[[${RESET}").
+                replace("$RB $RB", "${HIDE}]]${RESET}").
+                replace("$LB $LC", "${HIDE}[{${RESET}").
+                replace("$RC $RB", "${HIDE}}]${RESET}").
+                replace("$QUOT $RC", "$QUOT$RC").
+                replace("$LC $LK", "${LC}$LK").
+                replace("$LC $QUOT", "${LC}$QUOT").
+                replace("$QUOT $RB", "$QUOT$RB").
+                replace("$LB $LK", "${LB}$LK").
+                replace("$LB $QUOT", "${LB}$QUOT").
+                replace("$RC $RC", "${HIDE}}}${RESET}").
+                replace("$RB $RC", "${HIDE}]}${RESET}")
+    }
+
+    private static String writeMap(Map<String, Object> map, int offset) {
+        def sw = new StringWriter()
+        sw.println "${INDENT * offset}$LC"
+        offset += 1
+        int index = 0
+        map.each { k, v ->
+            if (index++) {
+                sw.println COMMA
+            }
+            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.BLUE).a('"').a(k).a('": ').reset()
+            sw.print printValue(v, offset).replaceFirst(/^ +/, '')
+        }
+        offset -= 1
+        sw.println ""
+        sw.print "${INDENT * offset}$RC"
+        sw.toString()
+    }
+
+    static void main(String[] args) {
+        AnsiConsole.systemInstall()
+        def reader = args[0] == '-' ? System.in.newReader() : new File(args[0]).newReader()
+        def json = new JsonSlurper().parse(reader)
+
+        println printValue(json, 0)
+    }
+}
+
