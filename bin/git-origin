@@ -1,0 +1,2 @@
+#!/bin/bash
+git remote -v | grep origin | tr -s " " | cut -d " " -f 1 | cut -f 2 | head -1
