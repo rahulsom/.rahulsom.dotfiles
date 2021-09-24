@@ -3,13 +3,11 @@ initscript {
     gradlePluginPortal()
   }
   dependencies {
-    classpath 'gradle.plugin.com.dorongold.plugins:task-tree:1.5'
     classpath "com.adarshr:gradle-test-logger-plugin:2.0.0"
   }
 }
 
 allprojects {
-  apply plugin: com.dorongold.gradle.tasktree.TaskTreePlugin
   apply plugin: com.adarshr.gradle.testlogger.TestLoggerPlugin
 
   testlogger {
