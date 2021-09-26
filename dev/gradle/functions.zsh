@@ -20,3 +20,11 @@ gradle_setup_github_secrets() {
     echo "Secrets not loaded"
   fi
 }
+
+gradle_clear_secrets() {
+  # if you're done, clear the env vars
+  unset ORG_GRADLE_PROJECT_sonatypeUsername
+  unset ORG_GRADLE_PROJECT_sonatypePassword
+  unset ORG_GRADLE_PROJECT_signingKey
+  unset ORG_GRADLE_PROJECT_signingPassword
+}
