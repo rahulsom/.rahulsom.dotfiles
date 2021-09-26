@@ -4,17 +4,17 @@ source "${HOME}/.oh-your-dotfiles/lib/dotfiles.zsh"
 if [ ! -f ~/user.gitconfig ]; then
   cat >~/user.gitconfig <<EOF
 [user]
-  name = Daniel Thomas
-  email = danny.thomas@example.com
+  name = Rahul Somasunderam
+  email = rahulsom@noreply.github.com
 [shell]
   # Default SSH username. Defaults to \`git\`.
-  #username = danny
+  #username = rahulsom
 [github]
   # GitHub username for command-line tools.
-  user = DanielThomas
+  user = rahulsom
 [alias]
   # Push the current branch upstream to \`danny\` using the same branch name for the remote branch.
-  um = !git push --set-upstream danny \$(git current-branch)
+  um = !git push --set-upstream rahulsom \$(git current-branch)
 EOF
 fi
 
