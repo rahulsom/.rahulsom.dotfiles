@@ -33,3 +33,15 @@ gradle_clear_secrets() {
   unset ORG_GRADLE_PROJECT_signingKey
   unset ORG_GRADLE_PROJECT_signingPassword
 }
+
+gradle_isolate_env() {
+  env -i HOME="$HOME" \
+      ORG_GRADLE_PROJECT_sonatypeUsername="$ORG_GRADLE_PROJECT_sonatypeUsername" \
+      ORG_GRADLE_PROJECT_sonatypePassword="$ORG_GRADLE_PROJECT_sonatypePassword" \
+      ORG_GRADLE_PROJECT_signingKey="$ORG_GRADLE_PROJECT_signingKey" \
+      ORG_GRADLE_PROJECT_signingPassword="$ORG_GRADLE_PROJECT_signingPassword" \
+      GRGIT_USER="$GRGIT_USER" \
+      JAVA_HOME="$JAVA_HOME" \
+      PATH="$PATH" \
+      ./gradlew "$@"
+}
