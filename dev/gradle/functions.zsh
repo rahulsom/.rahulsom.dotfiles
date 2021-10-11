@@ -7,11 +7,13 @@ gradle_prepare_computer_for_release() {
   ORG_GRADLE_PROJECT_sonatypePassword=$(op get item issues.sonatype.org | jq -r '.details.fields[] | select(.name == "password") | .value')
   ORG_GRADLE_PROJECT_signingKey=$(op get item gpg.key | jq -r '.details.notesPlain')
   ORG_GRADLE_PROJECT_signingPassword=$(op get item gpg.key | jq -r '.details.fields[] | select(.name == "password") | .value')
+  GRGIT_USER=$(op get item github.com | jq '.details.sections[] | select (.fields != null) | .fields[] | select (.t == "token") | .v')
 
   export ORG_GRADLE_PROJECT_sonatypeUsername
   export ORG_GRADLE_PROJECT_sonatypePassword
   export ORG_GRADLE_PROJECT_signingKey
   export ORG_GRADLE_PROJECT_signingPassword
+  export GRGIT_USER
 }
 
 gradle_setup_github_secrets() {
@@ -32,6 +34,7 @@ gradle_clear_secrets() {
   unset ORG_GRADLE_PROJECT_sonatypePassword
   unset ORG_GRADLE_PROJECT_signingKey
   unset ORG_GRADLE_PROJECT_signingPassword
+  unset GRGIT_USER
 }
 
 gradle_isolate_env() {
