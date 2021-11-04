@@ -10,9 +10,6 @@ My Dotfiles based on https://github.com/DanielThomas/oh-your-dotfiles[oh-your-do
 ----
 cd $HOME
 git clone https://github.com/DanielThomas/oh-your-dotfiles.git .oh-your-dotfiles
-cd .oh-your-dotfiles
-git checkout local
-cd ..
 ----
 
 2. Link the zshrc file
