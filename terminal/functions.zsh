@@ -356,5 +356,6 @@ insert_final_newline=false
 indent_style=space
 indent_size=$INDENT
 continuation_indent_size=$CONTINUATION
+ij_continuation_indent_size=$CONTINUATION
 EOF
 }
