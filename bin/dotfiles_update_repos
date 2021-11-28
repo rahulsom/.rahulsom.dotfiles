@@ -14,6 +14,7 @@ padErr() {
 
 testAndPull() {
   if [ -d .git ]; then
+    git fetch --all
     git log $(git current-branch)..$(git rev-parse --abbrev-ref --symbolic-full-name @{u}) --pretty="%Cblue%h%Creset %s - %C(black)%ae%Creset" --color | cat -
     echo ""
     git pull
