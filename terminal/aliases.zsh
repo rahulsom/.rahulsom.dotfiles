@@ -179,4 +179,7 @@ alias gig2='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.lev
 alias gig1='groovy -Dgroovy.grape.report.downloads=true -Divy.message.logger.level=1'
 alias plistbuddy='/usr/libexec/PlistBuddy'
 
-alias envsubst=$(find /usr/local/Cellar/gettext -name envsubst | head -1)
+alias envsubst=$({
+  find /usr/local/Cellar/gettext -name envsubst
+  find /opt/homebrew/Cellar/gettext -name envsubst
+} 2>/dev/null | head -1)
