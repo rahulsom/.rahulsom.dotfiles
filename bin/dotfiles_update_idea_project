@@ -1,5 +1,6 @@
 #!/bin/bash
 
+mkdir -p $HOME/.oh-your-dotfiles/.idea
 cat >$HOME/.oh-your-dotfiles/.idea/modules.xml <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
