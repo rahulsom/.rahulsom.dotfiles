@@ -1,6 +1,6 @@
 ## Databases
-alias postgres='docker run --name postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres:alpine'
-alias pgsql='docker run --rm -it -e PGPASSWORD=mysecretpassword --link postgres:postgres postgres:alpine psql -h postgres -U postgres'
+alias postgres='docker run --rm --name postgres -e POSTGRES_PASSWORD=mysecretpassword -d -p 5432:5432 postgres'
+alias pgsql='docker run --rm -it -e PGPASSWORD=mysecretpassword --link postgres:postgres postgres psql -h postgres -U postgres'
 
 alias mysqld='docker run --name mysql -p 3306:3306 -e MYSQL_ROOT_PASSWORD=my-secret-pw -d mysql'
 function mysql() {
