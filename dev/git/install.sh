@@ -20,7 +20,7 @@ fi
 
 # gitconfig
 echo "[include]" >~/.gitconfig
+echo "  path = ~/user.gitconfig" >>~/.gitconfig
 for file_source in $(dotfiles_find \*.gitconfig); do
   echo "  path = $file_source" >>~/.gitconfig
 done
-echo "  path = ~/user.gitconfig" >>~/.gitconfig
