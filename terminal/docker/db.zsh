@@ -8,8 +8,8 @@ function mysql() {
     'exec mysql -h"$MYSQL_PORT_3306_TCP_ADDR" -P"$MYSQL_PORT_3306_TCP_PORT" -uroot -p"$MYSQL_ENV_MYSQL_ROOT_PASSWORD"'
 }
 
-alias redis='docker run --name redis -d -p 6379:6379 redis:alpine'
-alias redis-cli='docker run -it --link redis:redis --rm redis:alpine redis-cli -h redis -p 6379'
+alias redis='docker run --name redis -d -p 6379:6379 redis'
+alias redis-cli='docker run -it --link redis:redis --rm redis redis-cli -h redis -p 6379'
 
 alias cassandra='docker run --name cassandra -d -p 9042:9042 cassandra'
 function cqlsh() {
