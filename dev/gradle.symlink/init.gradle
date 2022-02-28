@@ -3,7 +3,7 @@ initscript {
     gradlePluginPortal()
   }
   dependencies {
-    classpath "com.adarshr:gradle-test-logger-plugin:3.1.0"
+    classpath "com.adarshr:gradle-test-logger-plugin:3.2.0"
   }
 }
 
