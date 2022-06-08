@@ -20,3 +20,6 @@
 [pull]
   # Fast forward by default. You can --rebase or --no-rebase if you like
   ff = only
+
+[init]
+  defaultBranch = main
