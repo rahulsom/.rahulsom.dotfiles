@@ -3,11 +3,11 @@ gradle_prepare_computer_for_release() {
   eval "$(op signin my)"
 
   # Get the good stuff from 1password
-  ORG_GRADLE_PROJECT_sonatypeUsername=$(op get item issues.sonatype.org | jq -r '.details.fields[] | select(.name == "username") | .value')
-  ORG_GRADLE_PROJECT_sonatypePassword=$(op get item issues.sonatype.org | jq -r '.details.fields[] | select(.name == "password") | .value')
-  ORG_GRADLE_PROJECT_signingKey=$(op get item gpg.key | jq -r '.details.notesPlain')
-  ORG_GRADLE_PROJECT_signingPassword=$(op get item gpg.key | jq -r '.details.fields[] | select(.name == "password") | .value')
-  GRGIT_USER=$(op get item github.com | jq '.details.sections[] | select (.fields != null) | .fields[] | select (.t == "token") | .v')
+  ORG_GRADLE_PROJECT_sonatypeUsername=$(op item get --format json issues.sonatype.org | jq -r '.fields[] | select(.id == "username") | .value')
+  ORG_GRADLE_PROJECT_sonatypePassword=$(op item get --format json issues.sonatype.org | jq -r '.fields[] | select(.id == "password") | .value')
+  ORG_GRADLE_PROJECT_signingKey=$(op item get --format json gpg.key | jq -r '.fields[] | select(.id == "notesPlain") | .value')
+  ORG_GRADLE_PROJECT_signingPassword=$(op item get --format json gpg.key | jq -r '.fields[] | select(.id == "password") | .value')
+  GRGIT_USER=$(op item get --format json github.com | jq -r '.fields[] | select (.label == "token") | .value')
 
   export ORG_GRADLE_PROJECT_sonatypeUsername
   export ORG_GRADLE_PROJECT_sonatypePassword
