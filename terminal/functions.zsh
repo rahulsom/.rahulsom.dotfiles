@@ -359,3 +359,5 @@ continuation_indent_size=$CONTINUATION
 ij_continuation_indent_size=$CONTINUATION
 EOF
 }
+
+function agr { ag -0 -l "$1" | xargs -0 perl -pi.bak -e "s/$1/$2/g"; }
