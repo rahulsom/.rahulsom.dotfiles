@@ -1,6 +1,6 @@
 gradle_prepare_computer_for_release() {
   # Say hello to 1password
-  eval "$(op signin my)"
+  eval "$(op signin)"
 
   # Get the good stuff from 1password
   ORG_GRADLE_PROJECT_sonatypeUsername=$(op item get --format json issues.sonatype.org | jq -r '.fields[] | select(.id == "username") | .value')
