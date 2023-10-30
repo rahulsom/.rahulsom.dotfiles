@@ -1,9 +1,6 @@
 #!/usr/bin/env groovy
-@Grab(group = 'org.fusesource.jansi', module = 'jansi', version = '1.17')
 import groovy.json.JsonSlurper
 import groovy.transform.CompileStatic
-import org.fusesource.jansi.Ansi
-import org.fusesource.jansi.AnsiConsole
 
 @CompileStatic
 class ShortJson {
@@ -11,8 +8,8 @@ class ShortJson {
     private static final String INDENT = '  '
     private static final int MAX_LINE = 200
 
-    public static final String HIDE = Ansi.ansi().fg(Ansi.Color.BLACK)
-    public static final String RESET = Ansi.ansi().reset()
+    public static final String HIDE = ''
+    public static final String RESET = ''
 
     public static final LC = "${HIDE}{${RESET}"
     public static final RC = "${HIDE}}${RESET}"
@@ -20,7 +17,7 @@ class ShortJson {
     public static final LB = "${HIDE}[${RESET}"
     public static final RB = "${HIDE}]${RESET}"
     public static final COMMA = "${HIDE},${RESET}"
-    public static final LK = Ansi.ansi().fgBright(Ansi.Color.BLUE).a('"')
+    public static final LK = '"'
     public static final QUOT = '"'
 
     static String printValue(def v, int offset = 0) {
@@ -28,7 +25,7 @@ class ShortJson {
         if (v instanceof String) {
             sw.print "${INDENT * offset}\"$v\""
         } else if (v instanceof Number) {
-            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.YELLOW).a(v).reset()
+            sw.print INDENT * offset + v
         } else if (v instanceof List) {
             def innerList = writeList(v, offset)
             if (pLen(trim(innerList)) < MAX_LINE - offset * INDENT.size() && !innerList.contains("{")) {
@@ -44,9 +41,9 @@ class ShortJson {
                 sw.print innerMap
             }
         } else if (v instanceof Boolean) {
-            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.GREEN).a(v).reset()
+            sw.print INDENT * offset + v
         } else if (v == null) {
-            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.RED).a(v).reset()
+            sw.print INDENT * offset + v
         }
         sw.toString()
     }
@@ -56,12 +53,7 @@ class ShortJson {
     }
 
     static String plain(String input) {
-        input.replace(HIDE, '').
-                replace(Ansi.ansi().fgBright(Ansi.Color.GREEN).toString(), '').
-                replace(Ansi.ansi().fgBright(Ansi.Color.RED).toString(), '').
-                replace(Ansi.ansi().fgBright(Ansi.Color.BLUE).toString(), '').
-                replace(Ansi.ansi().fgBright(Ansi.Color.YELLOW).toString(), '').
-                replace(RESET, '')
+        input
     }
 
     private static String writeList(List list, int offset) {
@@ -110,7 +102,7 @@ class ShortJson {
             if (index++) {
                 sw.println COMMA
             }
-            sw.print Ansi.ansi().a(INDENT * offset).fgBright(Ansi.Color.BLUE).a('"').a(k).a('": ').reset()
+            sw.print INDENT * offset + '"' + k + '": '
             sw.print printValue(v, offset).replaceFirst(/^ +/, '')
         }
         offset -= 1
@@ -120,7 +112,6 @@ class ShortJson {
     }
 
     static void main(String[] args) {
-        AnsiConsole.systemInstall()
         def reader = args[0] == '-' ? System.in.newReader() : new File(args[0]).newReader()
         def json = new JsonSlurper().parse(reader)
 
