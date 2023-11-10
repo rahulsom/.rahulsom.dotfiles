@@ -141,7 +141,7 @@ remote_only_branches.each do |name|
   }
   excluded_branches = ['master', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
   if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
-    ret_val[:fix] = "git push origin :#{name}"
+    ret_val[:fix] = "git branch -Dr origin/#{name}"
   end
   data.append ret_val
 end
@@ -158,7 +158,7 @@ tracked_branches.each do |name|
   }
   excluded_branches = ['master', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
   if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
-    ret_val[:fix] = "git branch -D #{name}; git push origin :#{name}"
+    ret_val[:fix] = "git branch -D #{name}; git branch -Dr origin/#{name}"
   end
   data.append ret_val
 end
