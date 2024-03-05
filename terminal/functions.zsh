@@ -361,3 +361,23 @@ EOF
 }
 
 function agr { ag -0 -l "$1" | xargs -0 perl -pi.bak -e "s/$1/$2/g"; }
+
+function take() {
+  local n=$1
+  awk "NR <= $n"
+}
+
+function drop() {
+  local n=$1
+  awk "NR > $n"
+}
+
+function dropLast() {
+  local n=$1
+  ghead -n -${n}
+}
+
+function takeLast() {
+  local n=$1
+  gtail -n ${n}
+}
