@@ -91,7 +91,7 @@ remote_only_branches = remote_branches - tracked_branches
 data = [
     {
         :type        => :header,
-        :fix         => '',
+        :fix         => '# Cleanup Command',
         :branch      => 'Branch', :age => 'Age',
         :aheadOrigin => 'orgn+', :behindOrigin => 'orgn-',
         :aheadSync   => 'trgt+', :behindSync => 'trgt-',
