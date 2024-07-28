@@ -3,8 +3,8 @@ gradle_prepare_computer_for_release() {
   eval "$(op signin)"
 
   # Get the good stuff from 1password
-  ORG_GRADLE_PROJECT_SONATYPEUSERNAME=$(op item get --format json issues.sonatype.org | jq -r '.fields[] | select(.id == "username") | .value')
-  ORG_GRADLE_PROJECT_SONATYPEPASSWORD=$(op item get --format json issues.sonatype.org | jq -r '.fields[] | select(.id == "password") | .value')
+  ORG_GRADLE_PROJECT_SONATYPEUSERNAME=$(op item get --format json SonatypeToken | jq -r '.fields[] | select(.id == "username") | .value')
+  ORG_GRADLE_PROJECT_SONATYPEPASSWORD=$(op item get --format json SonatypeToken | jq -r '.fields[] | select(.id == "password") | .value')
   ORG_GRADLE_PROJECT_SIGNINGKEY=$(op item get --format json gpg.key | jq -r '.fields[] | select(.id == "notesPlain") | .value')
   ORG_GRADLE_PROJECT_SIGNINGPASSWORD=$(op item get --format json gpg.key | jq -r '.fields[] | select(.id == "password") | .value')
   GRGIT_USER=$(op item get --format json github.com | jq -r '.fields[] | select (.label == "token") | .value')
