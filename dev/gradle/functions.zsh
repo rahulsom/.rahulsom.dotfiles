@@ -17,7 +17,7 @@ gradle_prepare_computer_for_release() {
 }
 
 gradle_setup_github_secrets() {
-  if [ "$ORG_GRADLE_PROJECT_SONATYPEPASSWORD" != "" ]; then
+  if [ "$ORG_GRADLE_PROJECT_sonatypePassword" != "" ]; then
     # Load the stuff into github
     echo -n $ORG_GRADLE_PROJECT_sonatypeUsername | gh secret set ORG_GRADLE_PROJECT_SONATYPEUSERNAME
     echo -n $ORG_GRADLE_PROJECT_sonatypePassword | gh secret set ORG_GRADLE_PROJECT_SONATYPEPASSWORD
