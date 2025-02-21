@@ -2,16 +2,45 @@ getX509() {
   if [ "$1" = "" ]; then
     echo "Please provide HOST:PORT"
   else
-    if [[ $1 =~ ^https:\\/\\/.+$ ]]; then
-      HOSTPORT=$(echo $1 | sed -e "s/^https:\\/\\///g")
+    local input=$1
+
+    # Initialize default port
+    default_port=443
+
+    # Extract host and port
+    if [[ "$input" =~ ^(http|https):// ]]; then
+        # If input is a URL, remove the scheme
+        input="${input#*://}"
+    fi
+
+    # Remove any path after the host and port
+    input="${input%%/*}"
+
+    # Check if input contains a port
+    if [[ "$input" =~ :[0-9]+$ ]]; then
+        # Extract host and port
+        host="${input%:*}"
+        port="${input##*:}"
     else
-      HOSTPORT=$1
+        # No port specified, use default
+        host="$input"
+        port="$default_port"
     fi
-    if [[ ! $HOSTPORT =~ ^.+\\:[0-9]+/?$ ]]; then
-      HOSTPORT=$(echo "${HOSTPORT}:443")
+
+    name=$host
+
+    # Check if the host is an IPv6 address
+    if [[ "$host" =~ : ]]; then
+        # If it's an IPv6 address, ensure it's enclosed in square brackets
+        if [[ "$host" != $$*$$ ]]; then
+            host="[$host]"
+        fi
     fi
-    echo | openssl s_client -servername NAME -connect ${HOSTPORT} 2>/dev/null | \
-      sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
+
+    echo "Getting X509 certificate for '$host:$port' with SNI '$name'"
+
+    echo | openssl s_client -servername $host -connect ${host}:${port} 2>/dev/null | \
+        sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p'
   fi
 }
 
