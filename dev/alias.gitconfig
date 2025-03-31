@@ -116,6 +116,8 @@
 	  !git rebase --interactive origin/master
 	# Show the commit log with a prettier, clearer history.
 	pretty-one-line-log = log --graph --oneline --date=short --pretty='format:%C(yellow)%h%Creset %ad %C(black)|%Creset %s%C(yellow)%d%Creset %C(black)%an%Creset'
+	# Show the unreleased commit log with a prettier, clearer history.
+	unreleased = !git log --graph --oneline --date=short --pretty='format:%C(yellow)%h%Creset %ad %C(black)|%Creset %s%C(yellow)%d%Creset %C(black)%an%Creset' $(git tag | tail -n 1)..HEAD --no-merges
 	# Commit any changes to files, squash them into the last commit
 	# and update its date.
 	fix-up-previous-commit = !git commit --all --amend \
