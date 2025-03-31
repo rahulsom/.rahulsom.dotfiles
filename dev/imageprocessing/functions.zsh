@@ -22,14 +22,14 @@ function scale_image() {
   for size in "${sizes[@]}"; do
     of_name="${filename%.$extension}_$size.$extension"
     echo $of_name
-    convert \
+    magick \
+        ${INPUT_FILE} \
         -resize x${size} \
         -gravity center \
         -crop ${size}x${size}+0+0 \
         -background none \
         -flatten \
         -colors 256 \
-        ${INPUT_FILE} \
         ${of_name}
   done
 }
