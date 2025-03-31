@@ -18,10 +18,18 @@ function scale_image() {
   extension="${OUTPUT_FILE##*.}"
   filename="${OUTPUT_FILE%.*}"
 
-  sizes=(16 24 32 48 64 128)
+  sizes=(16 24 32 48 64 128 256 512 1024)
   for size in "${sizes[@]}"; do
     of_name="${filename%.$extension}_$size.$extension"
     echo $of_name
-    convert -resize x${size} -gravity center -crop ${size}x${size}+0+0 -background none ${INPUT_FILE} -flatten -colors 256 ${of_name}
+    convert \
+        -resize x${size} \
+        -gravity center \
+        -crop ${size}x${size}+0+0 \
+        -background none \
+        -flatten \
+        -colors 256 \
+        ${INPUT_FILE} \
+        ${of_name}
   done
 }
