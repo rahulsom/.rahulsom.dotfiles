@@ -46,8 +46,8 @@ getX509() {
 
 getSAN() {
   if [ "$1" = "" ]; then
-    cat - | openssl x509 -text | grep "X509v3 Subject Alternative Name" -A 1 | tail -1 | tr -s " " | tr , '\n'
+    cat - | openssl x509 -text | grep "X509v3 Subject Alternative Name" -A 1 | tail -1 | tr -s " " | tr , '\n' | sort
   else
-    cat $1 | openssl x509 -text | grep "X509v3 Subject Alternative Name" -A 1 | tail -1 | tr -s " " | tr , '\n'
+    cat $1 | openssl x509 -text | grep "X509v3 Subject Alternative Name" -A 1 | tail -1 | tr -s " " | tr , '\n' | sort
   fi
 }
