@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# Script to suggest next semantic version based on git tags
+# Usage: semver-next [major|minor|patch] [-v|--verbose]
+
+set -e
+
+VERBOSE=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -v|--verbose)
+            VERBOSE=true
+            shift
+            ;;
+        major|minor|patch)
+            TYPE=$1
+            shift
+            ;;
+        *)
+            TYPE=$1
+            shift
+            ;;
+    esac
+done
+
+# Get the latest tag
+LATEST_TAG=$(git tag --sort=-version:refname | head -1)
+
+if [ -z "$LATEST_TAG" ]; then
+    if [ "$VERBOSE" = true ]; then
+        echo "No tags found. Suggesting initial version: v1.0.0" >&2
+    fi
+    echo "v1.0.0"
+    exit 0
+fi
+
+# Remove 'v' prefix if present
+VERSION=${LATEST_TAG#v}
+
+# Split version into parts
+IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+
+# Validate that we have numeric parts
+if ! [[ "$MAJOR" =~ ^[0-9]+$ ]] || ! [[ "$MINOR" =~ ^[0-9]+$ ]] || ! [[ "$PATCH" =~ ^[0-9]+$ ]]; then
+    echo "Error: Latest tag '$LATEST_TAG' doesn't follow semantic versioning format" >&2
+    exit 1
+fi
+
+TYPE=${TYPE:-patch}
+
+case "$TYPE" in
+    major)
+        NEW_VERSION="v$((MAJOR + 1)).0.0"
+        ;;
+    minor)
+        NEW_VERSION="v$MAJOR.$((MINOR + 1)).0"
+        ;;
+    patch)
+        NEW_VERSION="v$MAJOR.$MINOR.$((PATCH + 1))"
+        ;;
+    *)
+        echo "Usage: $0 [major|minor|patch] [-v|--verbose]" >&2
+        echo "  major: Increment major version (breaking changes)" >&2
+        echo "  minor: Increment minor version (new features)" >&2
+        echo "  patch: Increment patch version (bug fixes)" >&2
+        echo "  -v, --verbose: Show current version info" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$VERBOSE" = true ]; then
+    echo "Current version: $LATEST_TAG" >&2
+    echo "Suggested next version: $NEW_VERSION" >&2
+fi
+
+echo "$NEW_VERSION"
