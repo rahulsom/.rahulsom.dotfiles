@@ -3,11 +3,11 @@ gradle_prepare_computer_for_release() {
   eval "$(op signin)"
 
   # Get the good stuff from 1password
-  ORG_GRADLE_PROJECT_sonatypeUsername=$(op item get --format json SonatypeToken | jq -r '.fields[] | select(.id == "username") | .value')
-  ORG_GRADLE_PROJECT_sonatypePassword=$(op item get --format json SonatypeToken | jq -r '.fields[] | select(.id == "password") | .value')
-  ORG_GRADLE_PROJECT_signingKey=$(op item get --format json gpg.key | jq -r '.fields[] | select(.id == "notesPlain") | .value')
-  ORG_GRADLE_PROJECT_signingPassword=$(op item get --format json gpg.key | jq -r '.fields[] | select(.id == "password") | .value')
-  GRGIT_USER=$(op item get --format json github.com | jq -r '.fields[] | select (.label == "token") | .value')
+  ORG_GRADLE_PROJECT_sonatypeUsername=$(op item get --format json SonatypeToken | jq -r '.fields[] | select(.id == "username")   | .value')
+  ORG_GRADLE_PROJECT_sonatypePassword=$(op item get --format json SonatypeToken | jq -r '.fields[] | select(.id == "password")   | .value')
+  ORG_GRADLE_PROJECT_signingKey=$(op item get --format json gpg.key             | jq -r '.fields[] | select(.id == "notesPlain") | .value')
+  ORG_GRADLE_PROJECT_signingPassword=$(op item get --format json gpg.key        | jq -r '.fields[] | select(.id == "password")   | .value')
+  GRGIT_USER=$(op item get --format json github.com                             | jq -r '.fields[] | select (.label == "token")  | .value')
 
   export ORG_GRADLE_PROJECT_sonatypeUsername
   export ORG_GRADLE_PROJECT_sonatypePassword
@@ -21,8 +21,8 @@ gradle_setup_github_secrets() {
     # Load the stuff into github
     echo -n $ORG_GRADLE_PROJECT_sonatypeUsername | gh secret set ORG_GRADLE_PROJECT_SONATYPEUSERNAME
     echo -n $ORG_GRADLE_PROJECT_sonatypePassword | gh secret set ORG_GRADLE_PROJECT_SONATYPEPASSWORD
-    echo -n $ORG_GRADLE_PROJECT_signingKey | gh secret set ORG_GRADLE_PROJECT_SIGNINGKEY
-    echo -n $ORG_GRADLE_PROJECT_signingPassword | gh secret set ORG_GRADLE_PROJECT_SIGNINGPASSWORD
+    echo -n $ORG_GRADLE_PROJECT_signingKey       | gh secret set ORG_GRADLE_PROJECT_SIGNINGKEY
+    echo -n $ORG_GRADLE_PROJECT_signingPassword  | gh secret set ORG_GRADLE_PROJECT_SIGNINGPASSWORD
     echo "Configured"
   else
     echo "Secrets not loaded"
