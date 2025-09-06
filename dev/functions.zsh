@@ -23,5 +23,5 @@ function generatePassword() {
 }
 
 function gemini() {
-  npx https://github.com/google-gemini/gemini-cli
+  npx @google/gemini-cli@latest "$@"
 }
