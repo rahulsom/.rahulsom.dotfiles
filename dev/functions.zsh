@@ -21,3 +21,7 @@ function generatePassword() {
     println generator(charset, $LENGTH )
   "
 }
+
+function gemini() {
+  npx https://github.com/google-gemini/gemini-cli
+}
