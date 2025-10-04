@@ -1,3 +1,4 @@
-rbenv
-nodenv
+bash
 golang
+nodenv
+rbenv
