@@ -230,7 +230,11 @@ function rmgrape() {
 countdown(){
     date1=$((`date +%s` + $1));
     while [ "$date1" -ge `date +%s` ]; do
-        echo -n "  $(($date1 - `date +%s`)) seconds left      \r"
+        local remaining=$(($date1 - `date +%s`))
+        local hours=$((remaining / 3600))
+        local minutes=$(((remaining % 3600) / 60))
+        local seconds=$((remaining % 60))
+        printf "  %02d:%02d:%02d left      \r" $hours $minutes $seconds
         sleep 0.1
     done
     echo ""
