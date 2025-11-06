@@ -228,9 +228,9 @@ function rmgrape() {
 }
 
 countdown(){
-    date1=$((`date +%s` + $1));
-    while [ "$date1" -ge `date +%s` ]; do
-        local remaining=$(($date1 - `date +%s`))
+    start_date=$((`date +%s` + $1));
+    while [ "$start_date" -ge `date +%s` ]; do
+        local remaining=$(($start_date - `date +%s`))
         local hours=$((remaining / 3600))
         local minutes=$(((remaining % 3600) / 60))
         local seconds=$((remaining % 60))
