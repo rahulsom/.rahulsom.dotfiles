@@ -33,3 +33,11 @@ function copilot() {
 function jq_sort() {
   jq 'def sortkeys: . as $in | if type == "object" then to_entries | sort_by(.key) | map({(.key): (.value|sortkeys)}) | add elif type == "array" then map(sortkeys) else . end; sortkeys' "$@"
 }
+
+function coco() {
+  "$@" > >(while IFS= read -r line; do
+    print -P -- "%F{blue} ┃%f $line"
+  done) 2> >(while IFS= read -r line; do
+    print -P -- "%F{red} ┃%f $line" >&2
+  done)
+}
