@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Function to extract and display control file from a .deb package
+show_control() {
+  local deb_file="$1"
+
+  if [[ ! -f "$deb_file" ]]; then
+    echo "Error: File '$deb_file' not found" >&2
+    exit 1
+  fi
+
+  if [[ ! "$deb_file" =~ \.deb$ ]]; then
+    echo "Error: File '$deb_file' does not appear to be a .deb package" >&2
+    exit 1
+  fi
+
+  # Extract control file and sort alphabetically
+  # Try control.tar.gz first, then control.tar.xz
+  ar p "$deb_file" control.tar.gz 2>/dev/null | tar -xzO ./control 2>/dev/null | sort || \
+  ar p "$deb_file" control.tar.xz 2>/dev/null | tar -xJO ./control 2>/dev/null | sort
+}
+
+# Main execution
+main() {
+  if [[ $# -eq 0 ]]; then
+    echo "Usage: $0 <debian-package.deb>" >&2
+    exit 1
+  fi
+
+  local deb_file="$1"
+
+  show_control "$deb_file"
+}
+
+main "$@"
