@@ -26,6 +26,10 @@ function gemini() {
   npx @google/gemini-cli@"${GEMINI_VERSION:-latest}" "$@"
 }
 
+function qwen() {
+  npx @qwen-code/qwen-code@"${QWEN_VERSION:-latest}" "$@"
+}
+
 function copilot() {
   npx @github/copilot@"${COPILOT_VERSION:-latest}" "$@"
 }
