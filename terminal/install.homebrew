@@ -5,6 +5,7 @@ coreutils
 git
 git-lfs
 gh
+gpg
 htop
 httpie
 hub
