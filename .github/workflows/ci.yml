@@ -1,0 +1,27 @@
+name: Validate
+
+on:
+  pull_request:
+    branches: ['*']
+
+jobs:
+  build:
+    runs-on: macos-15
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - name: Install dotfiles
+        run: |-
+          set -ex
+          cd $HOME
+          git clone https://github.com/DanielThomas/oh-your-dotfiles.git ~/.oh-your-dotfiles
+          ln -s ~/.oh-your-dotfiles/oh-your.zshrc ~/.zshrc
+          git clone https://github.com/rahulsom/.rahulsom.dotfiles
+          ls -la
+          source $HOME/.zshrc
+          dotfiles_install
