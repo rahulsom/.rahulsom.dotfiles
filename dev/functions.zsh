@@ -34,6 +34,10 @@ function copilot() {
   npx @github/copilot@"${COPILOT_VERSION:-latest}" "$@"
 }
 
+function opencode() {
+  npx opencode-ai@"${COPILOT_VERSION:-latest}" "$@"
+}
+
 function jq_sort() {
   jq 'def sortkeys: . as $in | if type == "object" then to_entries | sort_by(.key) | map({(.key): (.value|sortkeys)}) | add elif type == "array" then map(sortkeys) else . end; sortkeys' "$@"
 }
