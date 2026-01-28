@@ -82,9 +82,29 @@ def print_type(json, header, type, widths)
   end
 end
 
-local_branches       = `git branch | sed -e s/\\*//g | tr -s " " | cut -d " " -f 2 | sort`.split(' ')
-remote_branches      = `git branch -r | grep origin | grep -v HEAD`.split(' ').map { |name| name.gsub('origin/', '') }
-tracked_branches     = local_branches.&(remote_branches)
+# Optimization: Fetch all refs and ages in one go
+# Format: refname | committerdate:relative
+refs_output = `git for-each-ref --format="%(refname)|%(committerdate:relative)" refs/heads refs/remotes`
+all_refs = {}
+local_branches = []
+remote_branches = []
+
+refs_output.split("\n").each do |line|
+  full_ref, date = line.split('|')
+  age = date.split(',').first.strip
+
+  if full_ref.start_with?('refs/heads/')
+    short_name = full_ref.sub('refs/heads/', '')
+    local_branches << short_name
+    all_refs[short_name] = age
+  elsif full_ref.start_with?('refs/remotes/origin/') && !full_ref.end_with?('/HEAD')
+    short_name = full_ref.sub('refs/remotes/origin/', '')
+    remote_branches << short_name
+    all_refs["origin/#{short_name}"] = age
+  end
+end
+
+tracked_branches     = local_branches & remote_branches
 local_only_branches  = local_branches - tracked_branches
 remote_only_branches = remote_branches - tracked_branches
 
@@ -99,8 +119,23 @@ data = [
 ]
 
 def find_sync_branch
-  remote         = `git remote`.include?('upstream') ? 'upstream' : 'origin'
-  primary_branch = `git remote show origin | grep 'HEAD branch' | cut -d' ' -f5 | xargs echo -n`
+  remotes = `git remote`.split
+  remote = remotes.include?('upstream') ? 'upstream' : 'origin'
+
+  # Try to find the primary branch without networking
+  head_ref = `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null`.strip
+  if !head_ref.empty?
+      primary_branch = head_ref.split('/').last
+  else
+      if `git rev-parse --verify origin/main 2>/dev/null`.strip != ""
+        primary_branch = "main"
+      elsif `git rev-parse --verify origin/master 2>/dev/null`.strip != ""
+        primary_branch = "master"
+      else
+        # Fallback to network call if absolutely necessary
+        primary_branch = `git remote show origin | grep 'HEAD branch' | cut -d' ' -f5 | xargs echo -n`
+      end
+  end
   "#{remote}/#{primary_branch}"
 end
 
@@ -108,56 +143,58 @@ SYNC_BRANCH = find_sync_branch
 SYNC_REMOTE = SYNC_BRANCH.split('/')[0]
 SYNC_BRANCH_ONLY = SYNC_BRANCH.split('/')[1]
 
-def get_age(name)
-  `git show --pretty=format:"%cr" #{name} | head -n 1 | cut -d "," -f 1`.strip!
+def get_age(name, all_refs)
+  all_refs[name] || ''
 end
 
 def get_commits(from, to)
-  `git log --no-merges #{from}..#{to} --pretty=oneline | wc -l`.to_i
+  `git rev-list --count --no-merges #{from}..#{to} 2>/dev/null`.to_i
 end
 
 local_only_branches.each do |name|
   ret_val           = {
       type:       :local,
       branch:     name,
-      age:        get_age(name),
+      age:        get_age(name, all_refs),
       behindSync: get_commits(name, SYNC_BRANCH),
       aheadSync:  get_commits(SYNC_BRANCH, name),
   }
-  excluded_branches = ['master', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
-  if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
+  excluded_branches = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
+  if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git branch -D #{name}"
   end
   data.append ret_val
 end
 
 remote_only_branches.each do |name|
+  full_name = "origin/#{name}"
   ret_val           = {
       type:       :remote,
       branch:     name,
-      age:        get_age("origin/#{name}"),
-      behindSync: get_commits("origin/#{name}", SYNC_BRANCH),
-      aheadSync:  get_commits(SYNC_BRANCH, "origin/#{name}"),
+      age:        get_age(full_name, all_refs),
+      behindSync: get_commits(full_name, SYNC_BRANCH),
+      aheadSync:  get_commits(SYNC_BRANCH, full_name),
   }
-  excluded_branches = ['master', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
-  if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
+  excluded_branches = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
+  if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git push origin :#{name}"
   end
   data.append ret_val
 end
 
 tracked_branches.each do |name|
+  remote_name = "origin/#{name}"
   ret_val           = {
       type:         :tracked,
       branch:       name,
-      age:          get_age(name),
+      age:          get_age(name, all_refs),
       behindSync:   get_commits(name, SYNC_BRANCH),
       aheadSync:    get_commits(SYNC_BRANCH, name),
-      behindOrigin: get_commits(name, "origin/#{name}"),
-      aheadOrigin:  get_commits("origin/#{name}", name),
+      behindOrigin: get_commits(name, remote_name),
+      aheadOrigin:  get_commits(remote_name, name),
   }
-  excluded_branches = ['master', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
-  if ret_val[:aheadSync] == 0 && excluded_branches.find { |it| it == name } == nil
+  excluded_branches = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
+  if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git branch -D #{name}; git push origin :#{name}"
   end
   data.append ret_val
