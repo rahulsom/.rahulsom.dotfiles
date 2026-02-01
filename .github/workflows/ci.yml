@@ -23,5 +23,7 @@ jobs:
           git clone https://github.com/rahulsom/oh-your-dotfiles.git ~/.oh-your-dotfiles
           ln -s ~/.oh-your-dotfiles/oh-your.zshrc ~/.zshrc
           ln -s $GITHUB_WORKSPACE ~/.rahulsom.dotfiles
+          set +e
           source ~/.zshrc
+          set -e
           dotfiles_install
