@@ -15,13 +15,15 @@ jobs:
       id-token: write
       attestations: write
     steps:
+      - uses: actions/checkout@v4
       - name: Install dotfiles
-        run: |-
+        shell: zsh {0}
+        run: |
           set -ex
-          cd $HOME
-          git clone https://github.com/DanielThomas/oh-your-dotfiles.git ~/.oh-your-dotfiles
+          git clone https://github.com/rahulsom/oh-your-dotfiles.git ~/.oh-your-dotfiles
           ln -s ~/.oh-your-dotfiles/oh-your.zshrc ~/.zshrc
-          git clone https://github.com/rahulsom/.rahulsom.dotfiles
-          ls -la
-          source $HOME/.zshrc
+          ln -s $GITHUB_WORKSPACE ~/.rahulsom.dotfiles
+          set +e
+          source ~/.zshrc
+          set -e
           dotfiles_install
