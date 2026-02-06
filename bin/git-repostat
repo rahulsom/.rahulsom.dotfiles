@@ -82,42 +82,6 @@ def print_type(json, header, type, widths)
   end
 end
 
-# Optimization: Fetch all refs and ages in one go
-# Format: refname | committerdate:relative
-refs_output = `git for-each-ref --format="%(refname)|%(committerdate:relative)" refs/heads refs/remotes`
-all_refs = {}
-local_branches = []
-remote_branches = []
-
-refs_output.split("\n").each do |line|
-  full_ref, date = line.split('|')
-  age = date.split(',').first.strip
-
-  if full_ref.start_with?('refs/heads/')
-    short_name = full_ref.sub('refs/heads/', '')
-    local_branches << short_name
-    all_refs[short_name] = age
-  elsif full_ref.start_with?('refs/remotes/origin/') && !full_ref.end_with?('/HEAD')
-    short_name = full_ref.sub('refs/remotes/origin/', '')
-    remote_branches << short_name
-    all_refs["origin/#{short_name}"] = age
-  end
-end
-
-tracked_branches     = local_branches & remote_branches
-local_only_branches  = local_branches - tracked_branches
-remote_only_branches = remote_branches - tracked_branches
-
-data = [
-    {
-        :type        => :header,
-        :fix         => '# Cleanup Command',
-        :branch      => 'Branch', :age => 'Age',
-        :aheadOrigin => 'orgn+', :behindOrigin => 'orgn-',
-        :aheadSync   => 'trgt+', :behindSync => 'trgt-',
-    }
-]
-
 def find_sync_branch
   remotes = `git remote`.split
   remote = remotes.include?('upstream') ? 'upstream' : 'origin'
@@ -143,23 +107,58 @@ SYNC_BRANCH = find_sync_branch
 SYNC_REMOTE = SYNC_BRANCH.split('/')[0]
 SYNC_BRANCH_ONLY = SYNC_BRANCH.split('/')[1]
 
-def get_age(name, all_refs)
-  all_refs[name] || ''
+# Fetch all refs, ages, and ahead-behind vs sync branch in one git call
+refs_output = `git for-each-ref --format="%(refname)|%(committerdate:relative)|%(ahead-behind:#{SYNC_BRANCH})" refs/heads refs/remotes`
+all_refs = {}
+sync_ahead_behind = {}
+local_branches = []
+remote_branches = []
+
+refs_output.split("\n").each do |line|
+  parts = line.split('|')
+  full_ref = parts[0]
+  date = parts[1]
+  ahead_behind = parts[2]
+  age = date.split(',').first.strip
+  ahead, behind = ahead_behind.split(' ').map(&:to_i)
+
+  if full_ref.start_with?('refs/heads/')
+    short_name = full_ref.sub('refs/heads/', '')
+    local_branches << short_name
+    all_refs[short_name] = age
+    sync_ahead_behind[short_name] = { ahead: ahead, behind: behind }
+  elsif full_ref.start_with?('refs/remotes/origin/') && !full_ref.end_with?('/HEAD')
+    short_name = full_ref.sub('refs/remotes/origin/', '')
+    remote_branches << short_name
+    all_refs["origin/#{short_name}"] = age
+    sync_ahead_behind["origin/#{short_name}"] = { ahead: ahead, behind: behind }
+  end
 end
 
-def get_commits(from, to)
-  `git rev-list --count --no-merges #{from}..#{to} 2>/dev/null`.to_i
-end
+tracked_branches     = local_branches & remote_branches
+local_only_branches  = local_branches - tracked_branches
+remote_only_branches = remote_branches - tracked_branches
+excluded_branches    = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
+
+data = [
+    {
+        :type        => :header,
+        :fix         => '# Cleanup Command',
+        :branch      => 'Branch', :age => 'Age',
+        :aheadOrigin => 'orgn+', :behindOrigin => 'orgn-',
+        :aheadSync   => 'trgt+', :behindSync => 'trgt-',
+    }
+]
 
 local_only_branches.each do |name|
-  ret_val           = {
+  ab = sync_ahead_behind[name]
+  ret_val = {
       type:       :local,
       branch:     name,
-      age:        get_age(name, all_refs),
-      behindSync: get_commits(name, SYNC_BRANCH),
-      aheadSync:  get_commits(SYNC_BRANCH, name),
+      age:        all_refs[name] || '',
+      aheadSync:  ab[:ahead],
+      behindSync: ab[:behind],
   }
-  excluded_branches = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git branch -D #{name}"
   end
@@ -167,33 +166,46 @@ local_only_branches.each do |name|
 end
 
 remote_only_branches.each do |name|
-  full_name = "origin/#{name}"
-  ret_val           = {
+  ab = sync_ahead_behind["origin/#{name}"]
+  ret_val = {
       type:       :remote,
       branch:     name,
-      age:        get_age(full_name, all_refs),
-      behindSync: get_commits(full_name, SYNC_BRANCH),
-      aheadSync:  get_commits(SYNC_BRANCH, full_name),
+      age:        all_refs["origin/#{name}"] || '',
+      aheadSync:  ab[:ahead],
+      behindSync: ab[:behind],
   }
-  excluded_branches = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git push origin :#{name}"
   end
   data.append ret_val
 end
 
+# For tracked branches, get origin ahead-behind in parallel threads
+origin_ahead_behind = {}
+threads = tracked_branches.map do |name|
+  Thread.new(name) do |n|
+    result = `git rev-list --left-right --count #{n}...origin/#{n} 2>/dev/null`.strip
+    ahead, behind = result.split("\t").map(&:to_i)
+    [n, ahead, behind]
+  end
+end
+threads.each do |t|
+  name, ahead, behind = t.value
+  origin_ahead_behind[name] = { ahead: ahead, behind: behind }
+end
+
 tracked_branches.each do |name|
-  remote_name = "origin/#{name}"
-  ret_val           = {
+  ab_sync = sync_ahead_behind[name]
+  ab_origin = origin_ahead_behind[name]
+  ret_val = {
       type:         :tracked,
       branch:       name,
-      age:          get_age(name, all_refs),
-      behindSync:   get_commits(name, SYNC_BRANCH),
-      aheadSync:    get_commits(SYNC_BRANCH, name),
-      behindOrigin: get_commits(name, remote_name),
-      aheadOrigin:  get_commits(remote_name, name),
+      age:          all_refs[name] || '',
+      aheadSync:    ab_sync[:ahead],
+      behindSync:   ab_sync[:behind],
+      aheadOrigin:  ab_origin[:ahead],
+      behindOrigin: ab_origin[:behind],
   }
-  excluded_branches = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git branch -D #{name}; git push origin :#{name}"
   end
