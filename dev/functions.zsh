@@ -5,7 +5,7 @@ function generatePassword() {
   local SETS=${2:-aA0}
   groovy -e "
     def generator = { String alphabet, int n ->
-      new Random().with {
+      new java.security.SecureRandom().with {
         (1..n).collect { alphabet[ nextInt( alphabet.length() ) ] }.join()
       }
     }
