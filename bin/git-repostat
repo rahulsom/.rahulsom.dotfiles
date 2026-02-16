@@ -38,7 +38,7 @@ end
 
 def render_string(row, widths, field_name, width_key, just)
   if width_key == nil
-    padding = widths.collect { |k,v| v }.sum - widths[:fix] + 15
+    padding = widths.reject { |k, _| [:fix, :tip].include?(k) }.values.sum + 15
   else
     padding = widths[width_key]
   end
@@ -47,6 +47,14 @@ def render_string(row, widths, field_name, width_key, just)
   else
     (row[field_name] || '').ljust(padding) + Colorizator.colorize(' | ', :black)
   end
+end
+
+def render_tip(row, widths, field_name, width_key)
+  tip_value = row[field_name] || ''
+  padded = tip_value.ljust(widths[width_key])
+  # Dim the SHA to match separator styling while keeping author readable.
+  colored = padded.sub(/\A([0-9a-f]{7,40})/) { |sha| Colorizator.colorize(sha, :black) }
+  colored + Colorizator.colorize(' | ', :black)
 end
 
 def print_row(row, widths)
@@ -63,6 +71,7 @@ def print_row(row, widths)
     r += render_number(row, widths, :behindOrigin, :behindOrigin, :red)
     r += render_number(row, widths, :aheadSync, :aheadSync, :green)
     r += render_number(row, widths, :behindSync, :behindSync, :red)
+    r += render_tip(row, widths, :tip, :tip)
   else
     r += render_string(row, widths, :branch, nil, :rjust)
   end
@@ -107,18 +116,21 @@ SYNC_BRANCH = find_sync_branch
 SYNC_REMOTE = SYNC_BRANCH.split('/')[0]
 SYNC_BRANCH_ONLY = SYNC_BRANCH.split('/')[1]
 
-# Fetch all refs, ages, and ahead-behind vs sync branch in one git call
-refs_output = `git for-each-ref --format="%(refname)|%(committerdate:relative)|%(ahead-behind:#{SYNC_BRANCH})" refs/heads refs/remotes`
+# Fetch all refs, ages, ahead-behind vs sync branch, and tip metadata in one git call
+refs_output = `git for-each-ref --format="%(refname)%09%(committerdate:relative)%09%(ahead-behind:#{SYNC_BRANCH})%09%(objectname:short=8)%09%(authorname)" refs/heads refs/remotes`
 all_refs = {}
+all_ref_tips = {}
 sync_ahead_behind = {}
 local_branches = []
 remote_branches = []
 
 refs_output.split("\n").each do |line|
-  parts = line.split('|')
+  parts = line.split("\t", 5)
   full_ref = parts[0]
   date = parts[1]
   ahead_behind = parts[2]
+  short_sha = parts[3]
+  author = parts[4]
   age = date.split(',').first.strip
   ahead, behind = ahead_behind.split(' ').map(&:to_i)
 
@@ -126,11 +138,13 @@ refs_output.split("\n").each do |line|
     short_name = full_ref.sub('refs/heads/', '')
     local_branches << short_name
     all_refs[short_name] = age
+    all_ref_tips[short_name] = [short_sha, author].compact.join(' ').strip
     sync_ahead_behind[short_name] = { ahead: ahead, behind: behind }
   elsif full_ref.start_with?('refs/remotes/origin/') && !full_ref.end_with?('/HEAD')
     short_name = full_ref.sub('refs/remotes/origin/', '')
     remote_branches << short_name
     all_refs["origin/#{short_name}"] = age
+    all_ref_tips["origin/#{short_name}"] = [short_sha, author].compact.join(' ').strip
     sync_ahead_behind["origin/#{short_name}"] = { ahead: ahead, behind: behind }
   end
 end
@@ -147,6 +161,7 @@ data = [
         :branch      => 'Branch', :age => 'Age',
         :aheadOrigin => 'orgn+', :behindOrigin => 'orgn-',
         :aheadSync   => 'trgt+', :behindSync => 'trgt-',
+        :tip         => 'tip',
     }
 ]
 
@@ -158,6 +173,7 @@ local_only_branches.each do |name|
       age:        all_refs[name] || '',
       aheadSync:  ab[:ahead],
       behindSync: ab[:behind],
+      tip:        all_ref_tips[name] || '',
   }
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git branch -D #{name}"
@@ -173,6 +189,7 @@ remote_only_branches.each do |name|
       age:        all_refs["origin/#{name}"] || '',
       aheadSync:  ab[:ahead],
       behindSync: ab[:behind],
+      tip:        all_ref_tips["origin/#{name}"] || '',
   }
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git push origin :#{name}"
@@ -205,6 +222,7 @@ tracked_branches.each do |name|
       behindSync:   ab_sync[:behind],
       aheadOrigin:  ab_origin[:ahead],
       behindOrigin: ab_origin[:behind],
+      tip:          all_ref_tips[name] || '',
   }
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
     ret_val[:fix] = "git branch -D #{name}; git push origin :#{name}"
@@ -219,6 +237,7 @@ widths = {
     behindOrigin: column_width(data, :behindOrigin),
     aheadSync:    column_width(data, :aheadSync),
     behindSync:   column_width(data, :behindSync),
+    tip:          column_width(data, :tip),
     fix:          70,
 }
 
