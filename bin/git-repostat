@@ -129,7 +129,7 @@ refs_output.split("\n").each do |line|
   full_ref = parts[0]
   date = parts[1]
   ahead_behind = parts[2]
-  short_sha = parts[3]
+  short_sha = parts[3][0..7]
   author = parts[4]
   age = date.split(',').first.strip
   ahead, behind = ahead_behind.split(' ').map(&:to_i)
