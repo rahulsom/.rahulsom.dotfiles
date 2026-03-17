@@ -135,12 +135,17 @@ def main() -> None:
         next_version = base.bump_patch()
 
     if args.rc == "rc":
-        # If latest tag is already an rc (e.g. 1.3.0-rc.1), next is same base + rc.(N+1)
+        # If latest tag is already an rc for the same target base, increment rc number.
+        # Otherwise (e.g. minor bump requested but latest rc is for a patch), start at rc.1.
         if version_info.prerelease and RC_PRERELEASE_RE.match(version_info.prerelease):
             target_base = semver.VersionInfo(
                 version_info.major, version_info.minor, version_info.patch
             )
-            rc_num = next_rc_number(version_info, target_base)
+            if target_base == next_version:
+                rc_num = next_rc_number(version_info, target_base)
+            else:
+                target_base = next_version
+                rc_num = 1
         else:
             target_base = next_version
             rc_num = 1
