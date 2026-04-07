@@ -228,14 +228,23 @@ function rmgrape() {
 }
 
 countdown(){
-    start_date=$(($(date +%s) + $1));
+    local start_date=$(($(date +%s) + $1))
+    local remaining
+    local hours
+    local minutes
+    local seconds
+    local input
+
+    echo "Ctrl-C to abort. Return to proceed."
     while [ "$start_date" -ge "$(date +%s)" ]; do
-        local remaining=$(($start_date - $(date +%s)))
-        local hours=$((remaining / 3600))
-        local minutes=$(((remaining % 3600) / 60))
-        local seconds=$((remaining % 60))
+        remaining=$(($start_date - $(date +%s)))
+        hours=$((remaining / 3600))
+        minutes=$(((remaining % 3600) / 60))
+        seconds=$((remaining % 60))
         printf "  %02d:%02d:%02d left      \r" $hours $minutes $seconds
-        sleep 0.1
+        if read -t 0.1 -r input; then
+            break
+        fi
     done
     echo ""
 }
