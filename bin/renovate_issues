@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 for REPO in $(gh search code  --filename build.gradle.kts "$1" --json repository | jq -r '.[].repository.nameWithOwner' | sort | uniq); do
-  gh search issues --app 'renovate' -R "$REPO" --json url 'Dependency Dashboard' | jq -r '.[].url' | xargs open
+  gh search issues --app 'renovate' -R "$REPO" --json url 'Dependency Dashboard' | jq -r '.[].url'
 done
