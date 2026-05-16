@@ -126,8 +126,11 @@ end
 SYNC_BRANCH = find_sync_branch
 SYNC_REMOTE = SYNC_BRANCH.split('/')[0]
 SYNC_BRANCH_ONLY = SYNC_BRANCH.split('/')[1]
-SYNC_REMOTE_LABEL = "#{SYNC_REMOTE[0, 4]}+"
-SYNC_REMOTE_LABEL_NEG = "#{SYNC_REMOTE[0, 4]}-"
+
+remotes = `git remote`.split
+TRACKING_REMOTE = remotes.include?('origin') ? 'origin' : SYNC_REMOTE
+TRACKING_REMOTE_LABEL = "#{TRACKING_REMOTE[0, 4]}+"
+TRACKING_REMOTE_LABEL_NEG = "#{TRACKING_REMOTE[0, 4]}-"
 
 # Fetch all refs, ages, ahead-behind vs sync branch, and tip metadata in one git call
 refs_output = `git for-each-ref --format="%(refname)%09%(committerdate:relative)%09%(ahead-behind:#{SYNC_BRANCH})%09%(objectname:short=8)%09%(authorname)" refs/heads refs/remotes`
@@ -136,6 +139,7 @@ all_ref_tips = {}
 sync_ahead_behind = {}
 local_branches = []
 remote_branches = []
+all_remotes_to_check = ['origin', 'upstream'].select { |r| remotes.include?(r) }
 
 refs_output.split("\n").each do |line|
   parts = line.split("\t", 5)
@@ -153,18 +157,22 @@ refs_output.split("\n").each do |line|
     all_refs[short_name] = age
     all_ref_tips[short_name] = [short_sha, author].compact.join(' ').strip
     sync_ahead_behind[short_name] = { ahead: ahead, behind: behind }
-  elsif full_ref.start_with?("refs/remotes/#{SYNC_REMOTE}/") && !full_ref.end_with?('/HEAD')
-    short_name = full_ref.sub("refs/remotes/#{SYNC_REMOTE}/", '')
-    remote_branches << short_name
-    all_refs["#{SYNC_REMOTE}/#{short_name}"] = age
-    all_ref_tips["#{SYNC_REMOTE}/#{short_name}"] = [short_sha, author].compact.join(' ').strip
-    sync_ahead_behind["#{SYNC_REMOTE}/#{short_name}"] = { ahead: ahead, behind: behind }
+  elsif full_ref =~ %r{^refs/remotes/([^/]+)/} && !full_ref.end_with?('/HEAD')
+    remote_name = $1
+    next unless all_remotes_to_check.include?(remote_name)
+
+    short_name = full_ref.sub("refs/remotes/#{remote_name}/", '')
+    remote_branches << {remote: remote_name, name: short_name}
+    all_refs["#{remote_name}/#{short_name}"] = age
+    all_ref_tips["#{remote_name}/#{short_name}"] = [short_sha, author].compact.join(' ').strip
+    sync_ahead_behind["#{remote_name}/#{short_name}"] = { ahead: ahead, behind: behind }
   end
 end
 
-tracked_branches     = local_branches & remote_branches
+remote_branch_names  = remote_branches.map { |rb| rb[:name] }.uniq
+tracked_branches     = local_branches & remote_branch_names
 local_only_branches  = local_branches - tracked_branches
-remote_only_branches = remote_branches - tracked_branches
+remote_only_branches = remote_branches.reject { |rb| local_branches.include?(rb[:name]) }
 excluded_branches    = ['master', 'main', 'develop', 'gh-pages', SYNC_BRANCH_ONLY]
 
 data = [
@@ -172,7 +180,7 @@ data = [
         :type        => :header,
         :fix         => '# Cleanup Command',
         :branch      => 'Branch', :age => 'Age',
-        :aheadOrigin => SYNC_REMOTE_LABEL, :behindOrigin => SYNC_REMOTE_LABEL_NEG,
+        :aheadOrigin => TRACKING_REMOTE_LABEL, :behindOrigin => TRACKING_REMOTE_LABEL_NEG,
         :aheadSync   => 'trgt+', :behindSync => 'trgt-',
         :tip         => 'tip',
     }
@@ -194,18 +202,21 @@ local_only_branches.each do |name|
   data.append ret_val
 end
 
-remote_only_branches.each do |name|
-  ab = sync_ahead_behind["#{SYNC_REMOTE}/#{name}"]
+remote_only_branches.each do |rb|
+  name = rb[:name]
+  remote = rb[:remote]
+  full_name = "#{remote}/#{name}"
+  ab = sync_ahead_behind[full_name]
   ret_val = {
       type:       :remote,
-      branch:     name,
-      age:        all_refs["#{SYNC_REMOTE}/#{name}"] || '',
+      branch:     full_name,
+      age:        all_refs[full_name] || '',
       aheadSync:  ab[:ahead],
       behindSync: ab[:behind],
-      tip:        all_ref_tips["#{SYNC_REMOTE}/#{name}"] || '',
+      tip:        all_ref_tips[full_name] || '',
   }
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
-    ret_val[:fix] = "git push #{SYNC_REMOTE} :#{name}"
+    ret_val[:fix] = "git push #{remote} :#{name}"
   end
   data.append ret_val
 end
@@ -214,9 +225,13 @@ end
 remote_ahead_behind = {}
 threads = tracked_branches.map do |name|
   Thread.new(name) do |n|
-    result = `git rev-list --left-right --count #{n}...#{SYNC_REMOTE}/#{n} 2>/dev/null`.strip
-    ahead, behind = result.split("\t").map(&:to_i)
-    [n, ahead, behind]
+    if all_refs.key?("#{TRACKING_REMOTE}/#{n}")
+      result = `git rev-list --left-right --count #{n}...#{TRACKING_REMOTE}/#{n} 2>/dev/null`.strip
+      ahead, behind = result.split("\t").map(&:to_i)
+      [n, ahead, behind]
+    else
+      [n, nil, nil]
+    end
   end
 end
 threads.each do |t|
@@ -238,7 +253,7 @@ tracked_branches.each do |name|
       tip:          all_ref_tips[name] || '',
   }
   if ret_val[:aheadSync] == 0 && !excluded_branches.include?(name)
-    ret_val[:fix] = "git branch -D #{name}; git push #{SYNC_REMOTE} :#{name}"
+    ret_val[:fix] = "git branch -D #{name}; git push #{TRACKING_REMOTE} :#{name}"
   end
   data.append ret_val
 end
