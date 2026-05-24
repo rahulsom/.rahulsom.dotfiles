@@ -23,19 +23,19 @@ function generatePassword() {
 }
 
 function gemini() {
-  npx @google/gemini-cli@"${GEMINI_VERSION:-latest}" "$@"
+  npx --yes @google/gemini-cli@"${GEMINI_VERSION:-latest}" "$@"
 }
 
 function qwen() {
-  npx @qwen-code/qwen-code@"${QWEN_VERSION:-latest}" "$@"
+  npx --yes @qwen-code/qwen-code@"${QWEN_VERSION:-latest}" "$@"
 }
 
 function copilot() {
-  npx @github/copilot@"${COPILOT_VERSION:-latest}" "$@"
+  npx --yes @github/copilot@"${COPILOT_VERSION:-latest}" "$@"
 }
 
 function opencode() {
-  npx opencode-ai@"${COPILOT_VERSION:-latest}" "$@"
+  npx --yes opencode-ai@"${COPILOT_VERSION:-latest}" "$@"
 }
 
 function jq_sort() {
