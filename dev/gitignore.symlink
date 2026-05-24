@@ -17,4 +17,6 @@ Thumbs.db
 
 # Gradle
 .gradletasknamecache
-.claude
+
+# Claude
+settings.local.json
