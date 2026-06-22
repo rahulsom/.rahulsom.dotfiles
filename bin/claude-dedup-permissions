@@ -1,0 +1,85 @@
+#!/bin/bash
+# Removes permissions from $PWD/.claude/settings.local.json that are already
+# covered by the global ~/.claude/settings.json, keeping the local file lean.
+
+GLOBAL_SETTINGS="$HOME/.claude/settings.json"
+LOCAL_SETTINGS="$PWD/.claude/settings.local.json"
+
+check_deps() {
+  local missing=()
+  for cmd in gum jq; do
+    command -v "$cmd" &>/dev/null || missing+=("$cmd")
+  done
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "Missing required tools: ${missing[*]}" >&2
+    exit 1
+  fi
+}
+
+read_allow() {
+  local file="$1"
+  jq -r '.permissions.allow // [] | .[]' "$file" 2>/dev/null
+}
+
+main() {
+  check_deps
+
+  if [[ ! -f "$GLOBAL_SETTINGS" ]]; then
+    gum log --level error "Global settings not found: $GLOBAL_SETTINGS"
+    exit 1
+  fi
+
+  if [[ ! -f "$LOCAL_SETTINGS" ]]; then
+    gum log --level warn "Local settings not found: $LOCAL_SETTINGS"
+    exit 0
+  fi
+
+  gum log --level info "Global : $GLOBAL_SETTINGS"
+  gum log --level info "Local  : $LOCAL_SETTINGS"
+
+  global_allow=()
+  while IFS= read -r line; do global_allow+=("$line"); done < <(read_allow "$GLOBAL_SETTINGS")
+  local_allow=()
+  while IFS= read -r line; do local_allow+=("$line"); done < <(read_allow "$LOCAL_SETTINGS")
+
+  local duplicates=()
+  local kept=()
+
+  for entry in "${local_allow[@]}"; do
+    local found=false
+    for global_entry in "${global_allow[@]}"; do
+      if [[ "$entry" == "$global_entry" ]]; then
+        found=true
+        break
+      fi
+    done
+    if $found; then
+      duplicates+=("$entry")
+    else
+      kept+=("$entry")
+    fi
+  done
+
+  if [[ ${#duplicates[@]} -eq 0 ]]; then
+    gum log --level info "No duplicates found — local settings are already clean."
+    exit 0
+  fi
+
+  gum log --level warn "Found ${#duplicates[@]} duplicate(s) to remove:"
+  for entry in "${duplicates[@]}"; do
+    gum log --level warn "  - $entry"
+  done
+
+  local new_json
+  new_json=$(jq --argjson kept "$(printf '%s\n' "${kept[@]}" | jq -R . | jq -s .)" \
+    '.permissions.allow = $kept' "$LOCAL_SETTINGS")
+
+  # If the allow list ends up empty, remove the key to keep the file tidy
+  new_json=$(echo "$new_json" | jq 'if .permissions.allow == [] then del(.permissions.allow) else . end')
+  new_json=$(echo "$new_json" | jq 'if .permissions == {} then del(.permissions) else . end')
+
+  echo "$new_json" > "$LOCAL_SETTINGS"
+  gum log --level info "Updated $LOCAL_SETTINGS — ${#kept[@]} permission(s) kept, ${#duplicates[@]} removed."
+}
+
+main "$@"
