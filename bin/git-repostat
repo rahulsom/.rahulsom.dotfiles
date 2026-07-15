@@ -123,6 +123,19 @@ def find_sync_branch
   "#{remote}/#{primary_branch}"
 end
 
+def parse_remotes_option(args)
+  args.each_with_index do |arg, i|
+    if arg == '--remotes' || arg == '-r'
+      return args[i + 1]&.split(',')
+    elsif arg.start_with?('--remotes=')
+      return arg.sub('--remotes=', '').split(',')
+    end
+  end
+  nil
+end
+
+REMOTES_FILTER = parse_remotes_option(ARGV)
+
 SYNC_BRANCH = find_sync_branch
 SYNC_REMOTE = SYNC_BRANCH.split('/')[0]
 SYNC_BRANCH_ONLY = SYNC_BRANCH.split('/')[1]
@@ -139,7 +152,7 @@ all_ref_tips = {}
 sync_ahead_behind = {}
 local_branches = []
 remote_branches = []
-all_remotes_to_check = ['origin', 'upstream'].select { |r| remotes.include?(r) }
+all_remotes_to_check = (REMOTES_FILTER || ['origin', 'upstream']).select { |r| remotes.include?(r) }
 
 refs_output.split("\n").each do |line|
   parts = line.split("\t", 5)
