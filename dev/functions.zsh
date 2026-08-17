@@ -26,6 +26,10 @@ function gemini() {
   npx --yes @google/gemini-cli@"${GEMINI_VERSION:-latest}" "$@"
 }
 
+function jules() {
+  npx --yes @google/jules@"${JULES_VERSION:-latest}" "$@"
+}
+
 function qwen() {
   npx --yes @qwen-code/qwen-code@"${QWEN_VERSION:-latest}" "$@"
 }
@@ -35,7 +39,7 @@ function copilot() {
 }
 
 function opencode() {
-  npx --yes opencode-ai@"${COPILOT_VERSION:-latest}" "$@"
+  npx --yes opencode-ai@"${OPENCODE_VERSION:-latest}" "$@"
 }
 
 function jq_sort() {
