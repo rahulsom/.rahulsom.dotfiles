@@ -183,3 +183,5 @@ alias envsubst=$({
   find /usr/local/Cellar/gettext -name envsubst
   find /opt/homebrew/Cellar/gettext -name envsubst
 } 2>/dev/null | head -1)
+
+alias stripColor="sed -E 's/\x1b\[[0-9;]*m//g'"
