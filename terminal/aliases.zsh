@@ -185,3 +185,4 @@ alias envsubst=$({
 } 2>/dev/null | head -1)
 
 alias stripColor="sed -E 's/\x1b\[[0-9;]*m//g'"
+alias stripAnsi="sed -E 's/\x1B\[[0-9;?]*[a-zA-Z]//g'"
