@@ -22,24 +22,32 @@ function generatePassword() {
   "
 }
 
+function _run_npx() {
+  local package=$1
+  local version_var=$2
+  shift 2
+  local version="${(P)version_var:-latest}"
+  npx --yes "${package}@${version}" "$@"
+}
+
 function gemini() {
-  npx --yes @google/gemini-cli@"${GEMINI_VERSION:-latest}" "$@"
+  _run_npx @google/gemini-cli GEMINI_VERSION "$@"
 }
 
 function jules() {
-  npx --yes @google/jules@"${JULES_VERSION:-latest}" "$@"
+  _run_npx @google/jules JULES_VERSION "$@"
 }
 
 function qwen() {
-  npx --yes @qwen-code/qwen-code@"${QWEN_VERSION:-latest}" "$@"
+  _run_npx @qwen-code/qwen-code QWEN_VERSION "$@"
 }
 
 function copilot() {
-  npx --yes @github/copilot@"${COPILOT_VERSION:-latest}" "$@"
+  _run_npx @github/copilot COPILOT_VERSION "$@"
 }
 
 function opencode() {
-  npx --yes opencode-ai@"${OPENCODE_VERSION:-latest}" "$@"
+  _run_npx opencode-ai OPENCODE_VERSION "$@"
 }
 
 function jq_sort() {
