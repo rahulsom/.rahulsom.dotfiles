@@ -1,10 +1,45 @@
 #!/bin/bash
-git tag --format='%(creatordate:short)%09%(refname:strip=2)%09%(objectname)%09%(subject)' --sort=creatordate \
-      | awk '
-          BEGIN { FS = "\t" }
-          {
-            # Color codes: date=cyan(36), tag=green(32), hash=yellow(33), subject=white(37)
-            printf "\033[36m%s\033[0m\t\033[32m%s\033[0m\t\033[33m%s\033[0m\t\033[37m%s\033[0m\n", $1, $2, substr($3, 1, 7), $4
-          }
-        ' \
-      | column -t -s $'\t'
+
+usage() {
+  cat <<EOF
+Usage: git tags [-b|--branch] [-h|--help]
+
+List tags sorted by creation date.
+
+Options:
+  -b, --branch  Only show tags reachable from the current branch
+  -h, --help    Show this help
+EOF
+}
+
+list_tags() {
+  git tag "$@" \
+    --format='%(creatordate:short)%09%(refname:strip=2)%09%(objectname)%09%(subject)' \
+    --sort=creatordate
+}
+
+colorize() {
+  awk '
+    BEGIN { FS = "\t" }
+    {
+      # Color codes: date=cyan(36), tag=green(32), hash=yellow(33), subject=white(37)
+      printf "\033[36m%s\033[0m\t\033[32m%s\033[0m\t\033[33m%s\033[0m\t\033[37m%s\033[0m\n", $1, $2, substr($3, 1, 7), $4
+    }
+  '
+}
+
+main() {
+  local filter=()
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      -b|--branch) filter=(--merged HEAD) ;;
+      -h|--help) usage; exit 0 ;;
+      *) usage >&2; exit 1 ;;
+    esac
+    shift
+  done
+
+  list_tags "${filter[@]}" | colorize | column -t -s $'\t'
+}
+
+main "$@"
