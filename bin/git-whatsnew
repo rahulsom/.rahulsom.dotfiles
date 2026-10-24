@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+git --no-pager \
+    pretty-one-line-log \
+    $(git describe --tags --abbrev=0)..HEAD \
+    --no-merges \
+    --perl-regexp --author='^((?!(renovate)).*)$'
+echo ""
