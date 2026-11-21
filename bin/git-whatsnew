@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+echo "Last Tag: $(git describe --tags --abbrev=0)"
+echo ""
 git --no-pager \
     log --oneline --date=short \
     --pretty='format:%C(yellow)%h%Creset %ad %C(black)|%Creset %s%C(yellow)%d%Creset %C(black)%an%Creset' \
