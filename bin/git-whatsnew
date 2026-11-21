@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 git --no-pager \
-    pretty-one-line-log \
+    log --oneline --date=short \
+    --pretty='format:%C(yellow)%h%Creset %ad %C(black)|%Creset %s%C(yellow)%d%Creset %C(black)%an%Creset' \
     $(git describe --tags --abbrev=0)..HEAD \
     --no-merges \
     --perl-regexp --author='^((?!(renovate)).*)$'
